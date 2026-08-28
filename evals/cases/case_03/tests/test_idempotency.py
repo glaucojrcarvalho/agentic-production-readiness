@@ -1,5 +1,5 @@
-from src.db import connect
-from src.payments import process_payment
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import process_payment
 
 
 def test_retry_reuses_original_charge() -> None:
