@@ -1,0 +1,56 @@
+{
+  "case_id": "case_06",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "idempotency",
+      "severity": "high",
+      "claim": "The helper can apply a non-idempotent operation more than once when the operation succeeds remotely or mutates state and then raises an ambiguous transient error.",
+      "evidence": [
+        "src/retry.py:7-11 reruns the same arbitrary callable after every caught Exception and provides no idempotency key, deduplication, or restriction to side-effect-free operations.",
+        "A focused runtime check used an operation that appended one write and then raised TimeoutError on its first call; call_with_retry returned successfully after the second call with two writes recorded."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "retry_policy",
+      "severity": "medium",
+      "claim": "All ordinary exceptions are treated as retryable, so deterministic application and validation failures are repeated instead of failing immediately.",
+      "evidence": [
+        "src/retry.py:10 catches Exception without classifying transient versus permanent failures.",
+        "A focused runtime check with an operation that always raised ValueError('invalid request') showed that the operation was invoked three times before the ValueError was returned to the caller.",
+        "tests/test_retry.py:4-15 covers only recovery from TimeoutError and does not constrain which exception types may be retried."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "retry_policy",
+      "severity": "medium",
+      "claim": "Retries have no delay, exponential backoff, jitter, or server-directed pacing, allowing many callers to hammer a degraded dependency in tight synchronized loops and worsen an outage.",
+      "evidence": [
+        "src/retry.py:7-11 immediately begins the next loop iteration after an exception; there is no sleep or backoff calculation.",
+        "A focused runtime check completed 1,000 failing attempts in approximately 0.000354 seconds, confirming that retries are issued as a tight loop."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "validation",
+      "severity": "medium",
+      "claim": "Non-positive attempt counts do not produce a defined validation error and instead fail through an internal assertion before the operation is called.",
+      "evidence": [
+        "src/retry.py:7 executes zero iterations for attempts <= 0, leaving last_error as None; src/retry.py:13 then raises AssertionError.",
+        "Focused runtime checks with attempts=0 and attempts=-1 both raised an empty AssertionError and invoked the operation zero times.",
+        "Because Python assertions can be disabled with optimization, the same path can instead proceed to `raise None` and produce a different TypeError, making production behavior dependent on interpreter flags."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": [
+    "The case contains no call sites, so it is unknown whether production callers independently enforce idempotency, restrict retryable exception types, or cap the attempts argument.",
+    "The required retry timing and backoff policy is not specified; the finding is based on the observed absence of any pacing in this helper."
+  ]
+}
