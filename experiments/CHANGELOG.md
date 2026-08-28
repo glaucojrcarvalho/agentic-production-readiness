@@ -37,6 +37,14 @@ The baseline agent reviewed `evals/cases/case_01` and correctly identified that 
 
 The finding used the category `data_consistency`; the hidden ground truth uses `transaction_consistency`. Because the current evaluator requires an exact category match, this substantively correct finding could be scored incorrectly due only to taxonomy wording. Before scored baseline runs, we will freeze a canonical defect taxonomy so agent output, ground truth, and evaluator expectations share the same category definitions. This harness pilot is diagnostic and will not count toward final baseline metrics.
 
+### Pilot / Clean-Control Fixture Check
+
+The first baseline run on `evals/cases/case_03` did not treat the intended clean control as ready. After the supplied tests passed, the agent ran additional probes and produced concrete evidence for four behaviors that the fixture did not cover: idempotency state was isolated per SQLite `:memory:` connection, simultaneous duplicate requests could surface a uniqueness error rather than replay the winning result, the payment function could interfere with a caller-owned transaction, and invalid payment values were accepted.
+
+Because `case_03` is intended to be a true-negative control for false-positive measurement, these findings exposed a fixture-design problem rather than a baseline miss. The result is diagnostic and will not count toward final baseline metrics.
+
+Decision: repair the clean control before scoring it. The revised fixture now shares state across independent database connections, serializes competing writers before the idempotency check, preserves caller transaction ownership, validates payment inputs, and adds explicit regression tests for cross-connection replay, concurrent duplicates, nested transaction behavior, and invalid inputs. After the revised fixture passes locally, `case_03` must be rerun from a fresh agent session using the frozen baseline prompt.
+
 ### Approach
 
 A general-purpose coding agent receives the evaluation repository/change and a direct instruction to review it for production readiness.
