@@ -1,0 +1,19 @@
+{
+  "case_id": "case_04",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "concurrency",
+      "severity": "high",
+      "claim": "Concurrent reservations can both succeed against the same stock, allowing more units to be promised than are available.",
+      "evidence": [
+        "evals/cases/case_04/src/inventory.py:9-15 reads the available quantity, waits, and later writes a value derived from the stale read without any lock or atomic compare-and-update.",
+        "A runtime check using two threads to reserve one unit each from an initial stock of one produced two successful return values and a final available count of zero in all 20 attempts. This is a lost-update anomaly: two units were reported reserved while only one unit was deducted.",
+        "evals/cases/case_04/tests/test_inventory.py:4-8 exercises only one sequential reservation, so the passing test suite does not cover this concurrent failure mode."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}
