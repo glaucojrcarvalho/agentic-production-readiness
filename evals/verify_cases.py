@@ -132,6 +132,28 @@ def verify_case_11() -> None:
     else:
         raise AssertionError("empty event_id must be rejected")
 
+    barrier = Barrier(2)
+    results: list[dict] = []
+
+    def worker(kind: str) -> None:
+        barrier.wait()
+        results.append(handle_webhook(store, "evt-race", {"kind": kind}))
+
+    threads = [
+        Thread(target=worker, args=("invoice.paid",)),
+        Thread(target=worker, args=("invoice.updated",)),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    stored = store.get("evt-race")
+    assert stored is not None
+    assert len(results) == 2
+    assert results[0] == stored
+    assert results[1] == stored
+
 
 def verify_case_12() -> None:
     from evals.cases.case_12.src.credits import CreditLedger, issue_credit
