@@ -8,10 +8,26 @@ Focus on production-impacting correctness and reliability issues. Ignore purely 
 
 Return only valid JSON matching the required review schema.
 
+Use exactly one of these canonical categories for each finding:
+
+- `transaction_consistency`
+- `idempotency`
+- `concurrency`
+- `authorization`
+- `retry_policy`
+- `error_handling`
+- `state_transition`
+- `performance`
+- `time_handling`
+- `validation`
+- `other`
+
+Choose the most specific category that matches the primary failure mode. Do not create new category names. Use `other` only when a material defect is well supported but none of the canonical categories applies.
+
 For each finding:
 
 - describe one concrete defect;
-- assign the most specific category you can justify;
+- assign the most specific canonical category you can justify;
 - explain the production impact in the claim;
 - include evidence a human reviewer can verify;
 - set `verified` to true only when you directly confirmed the behavior through execution or equally concrete evidence;
