@@ -79,6 +79,14 @@ The new cases are intentionally harder than the harness slice: their visible tes
 
 Decision: run the frozen baseline independently on all twelve cases before choosing any advanced orchestration, tools, or specialized verification strategy. Improvements must be driven by observed failures on this expanded baseline rather than by knowledge of the hidden ground truth.
 
+### Pilot / Second Clean-Control Concurrency Check
+
+The first baseline review of `case_11`, which was intended to be a clean control, produced a verified concurrency finding. The agent demonstrated that `WebhookStore.save()` used a non-atomic check-then-write sequence: two racing first deliveries for the same `event_id` could both succeed, return different results, and leave only one result stored. That behavior violated the case's own bounded contract, which requires racing duplicate deliveries to converge on the winner's stored result.
+
+Because this was a real fixture defect rather than a reviewer false positive, the original `case_11` baseline output is diagnostic and excluded from final baseline metrics.
+
+Decision: make the store's get/save operations concurrency-safe with a lock, add an explicit concurrent-delivery regression test, extend `verify_case_11()` to assert that both racing callers receive the same stored result, and rerun only `case_11` from a fresh baseline session before scoring the twelve-case benchmark.
+
 ### Approach
 
 A general-purpose coding agent receives the evaluation repository/change and a direct instruction to review it for production readiness.
@@ -91,7 +99,7 @@ Establish the performance of a simple, reasonable agent workflow before introduc
 
 ### Evidence
 
-The three-case harness slice scored perfectly. Expanded-suite metrics are pending completion of baseline runs for cases 04–12.
+The three-case harness slice scored perfectly. Expanded-suite metrics are pending completion of baseline runs for cases 04–12 and a clean rerun of the repaired `case_11` fixture.
 
 ### Decision / Learning
 
