@@ -1,0 +1,20 @@
+{
+  "case_id": "case_10",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "time_handling",
+      "severity": "high",
+      "claim": "Token expiration is evaluated by local wall-clock fields instead of absolute instants, so tokens can remain accepted after expiration or be rejected while still valid when the inputs use different UTC offsets.",
+      "evidence": [
+        "evals/cases/case_10/src/tokens.py:5-8 explicitly removes tzinfo from both inputs with replace(tzinfo=None) and then compares the resulting naive local times; replace does not convert either timestamp to a common timezone.",
+        "Runtime reproduction: expires_at=2026-08-28T12:05:00+00:00 and now=2026-08-28T09:06:00-03:00 represent now one minute after expiry, but is_token_expired returned false, allowing an expired token.",
+        "Runtime reproduction: expires_at=2026-08-28T09:05:00-03:00 and now=2026-08-28T12:00:00+00:00 represent now five minutes before expiry, but is_token_expired returned true, rejecting a valid token.",
+        "evals/cases/case_10/tests/test_tokens.py:6-10 covers only two UTC datetimes, so the passing test does not exercise the documented different-zone behavior."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    }
+  ],
+  "uncertainties": []
+}
