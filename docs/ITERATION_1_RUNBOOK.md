@@ -76,6 +76,19 @@ python -m iteration_1.runner materialize-scored
 python evals/evaluator.py evals/results/iteration_1_scored
 ```
 
+Expected Iteration 1 aggregate:
+
+```text
+true positives = 11
+false positives = 1
+false negatives = 0
+precision = 0.9166666666666666
+recall = 1.0
+F1 = 0.9565217391304348
+decision accuracy = 1.0
+evidence-grounded finding rate = 1.0
+```
+
 Compare the result to the frozen baseline:
 
 ```text
@@ -86,12 +99,33 @@ decision accuracy = 1.000
 evidence-grounded finding rate = 1.000
 ```
 
-## Smoke Test Before Scored Runs
+## Smoke Test
 
-Before starting the twelve scored cases, run the deterministic runner tests:
+Run the deterministic runner tests:
 
 ```bash
 python -m pytest tests/test_iteration_1_runner.py -q
 ```
 
-Do not change prompts, schemas, runner semantics, or case fixtures after the scored Iteration 1 run begins unless a genuine benchmark defect is independently established and documented.
+The current clean-checkout result is four passing runner tests.
+
+Do not use `python -m pytest -q` as a green/red project-health gate. The benchmark deliberately contains planted defects. In particular, the invariant tests in `case_01` and `case_02` are expected to fail against their defective implementations; on the verified clean checkout the full benchmark tree reports two expected failures and 27 passing tests.
+
+## Clean Checkout
+
+On Ubuntu/Debian, bootstrap with `python3` because the global `python` alias may not exist before virtual-environment activation:
+
+```bash
+git clone https://github.com/glaucojrcarvalho/agentic-production-readiness.git apr-check
+cd apr-check
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+python -m pytest tests/test_iteration_1_runner.py -q
+python -m iteration_1.runner materialize-scored
+python evals/evaluator.py evals/results/iteration_1_scored
+```
+
+This procedure was verified from a fresh clone with Python 3.14.4.
+
+Do not change prompts, schemas, runner semantics, or case fixtures after the scored Iteration 1 run unless a genuine benchmark defect is independently established and documented.
