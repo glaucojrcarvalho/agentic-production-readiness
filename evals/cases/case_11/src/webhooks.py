@@ -1,3 +1,6 @@
+from threading import Lock
+
+
 class DuplicateEvent(Exception):
     pass
 
@@ -5,15 +8,18 @@ class DuplicateEvent(Exception):
 class WebhookStore:
     def __init__(self) -> None:
         self._results: dict[str, dict] = {}
+        self._lock = Lock()
 
     def get(self, event_id: str) -> dict | None:
-        result = self._results.get(event_id)
-        return dict(result) if result is not None else None
+        with self._lock:
+            result = self._results.get(event_id)
+            return dict(result) if result is not None else None
 
     def save(self, event_id: str, result: dict) -> None:
-        if event_id in self._results:
-            raise DuplicateEvent(event_id)
-        self._results[event_id] = dict(result)
+        with self._lock:
+            if event_id in self._results:
+                raise DuplicateEvent(event_id)
+            self._results[event_id] = dict(result)
 
 
 def handle_webhook(store: WebhookStore, event_id: str, payload: dict) -> dict:
