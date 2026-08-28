@@ -1,7 +1,7 @@
 import pytest
 
-from src.db import connect
-from src.orders import create_order
+from evals.cases.case_01.src.db import connect
+from evals.cases.case_01.src.orders import create_order
 
 
 def test_failed_business_operation_leaves_no_partial_state() -> None:
