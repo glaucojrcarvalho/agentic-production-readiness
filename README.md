@@ -28,29 +28,84 @@ General-purpose code-review agents can produce plausible findings, but plausibil
 
 ## Hypothesis
 
-An agentic workflow that gathers repository context, executes available verification tools, checks suspected defects, and reports uncertainty explicitly will detect production-readiness defects more reliably than a simple general-purpose review agent.
+An agentic workflow that separates broad defect discovery from strict evidence/scope/materiality admission can improve review precision without sacrificing recall.
 
 ## Baseline
 
 The baseline is intentionally simple:
 
-> A general-purpose coding agent receives the repository/change and a direct instruction to review it for production readiness.
+> A general-purpose coding agent receives one evaluation case and a direct instruction to review it for production readiness.
 
-The baseline and advanced workflow will receive the same evaluation cases and will be scored with the same rubric.
+On the frozen twelve-case benchmark, the baseline achieved:
 
-## Advanced Direction
+| Metric | Baseline |
+|---|---:|
+| Precision | 0.786 |
+| Recall | 1.000 |
+| F1 | 0.880 |
+| Decision accuracy | 1.000 |
+| Evidence-grounded finding rate | 1.000 |
 
-The advanced workflow will evolve experimentally rather than being fixed upfront. Candidate capabilities include:
+The baseline found every expected defect, but produced three false positives, all in the retry-policy case.
 
-1. context discovery;
-2. targeted test execution;
-3. static and runtime evidence gathering;
-4. defect hypothesis generation;
-5. explicit verification of suspected findings;
-6. evidence-backed final assessment;
-7. uncertainty and confidence reporting.
+## Iteration 1 — Finding Admission and Consolidation
 
-Every additional component must justify its existence through measured improvement.
+The measured failure mode was over-reporting, not missed defects. Iteration 1 therefore adds one purposeful second agent stage instead of expanding discovery breadth.
+
+```text
+case
+  ↓
+Stage A — candidate reviewer
+  ↓
+candidates.json
+  ↓
+Stage B — admission critic + root-cause consolidator
+  ↓
+final review
+  ↓
+deterministic validation + scoring
+```
+
+Stage A is intentionally broad. Stage B evaluates every candidate against five criteria:
+
+1. concrete failure mode;
+2. direct evidence;
+3. supported scope;
+4. material production impact;
+5. independence from stronger or duplicate findings.
+
+Stage B can admit, reject, or merge candidates. It cannot broadly introduce unrelated new findings.
+
+### Measured Result
+
+The same frozen twelve cases were rerun with two fresh model contexts per case.
+
+| Metric | Baseline | Iteration 1 | Change |
+|---|---:|---:|---:|
+| True positives | 11 | 11 | 0 |
+| False positives | 3 | 1 | -2 |
+| False negatives | 0 | 0 | 0 |
+| Precision | 0.786 | 0.917 | +0.131 |
+| Recall | 1.000 | 1.000 | 0.000 |
+| F1 | 0.880 | 0.957 | +0.077 |
+| Decision accuracy | 1.000 | 1.000 | 0.000 |
+| Evidence-grounded finding rate | 1.000 | 1.000 | 0.000 |
+
+The second stage reduced false positives by two-thirds while preserving all expected defects.
+
+The remaining false positive is a second technically defensible `retry_policy` finding in `case_06` about immediate retries without backoff or jitter. It was not suppressed merely to optimize benchmark score.
+
+## What Changed Our Design
+
+Two benchmark-development failures materially changed the project.
+
+First, agents found real defects in intended clean controls even when visible tests passed. That forced the benchmark to define bounded contracts and strengthen fixture construction rather than treating agent disagreement as noise.
+
+Second, the twelve-case baseline achieved perfect recall but imperfect precision. That shifted the advanced architecture away from "find more" toward "admit better."
+
+The resulting design principle is:
+
+> Do not add agent complexity without a measured failure mode that justifies it.
 
 ## Primary Metric
 
@@ -59,7 +114,7 @@ Every additional component must justify its existence through measured improveme
 This balances two things that matter to a real reviewer:
 
 - recall: finding real production defects;
-- precision: avoiding invented or irrelevant problems.
+- precision: avoiding invented, duplicate, or irrelevant problems.
 
 ## Secondary Metrics
 
@@ -71,11 +126,13 @@ This balances two things that matter to a real reviewer:
 - latency;
 - approximate cost per case.
 
+Runtime and cost were not yet captured systematically in the current scored run and are reported as such rather than estimated.
+
 ## Evaluation Principle
 
-The baseline and advanced solution will be evaluated on the same fixed set of backend engineering cases with known ground truth.
+Baseline and advanced workflows use the same fixed twelve backend cases, the same canonical defect taxonomy, the same final review schema, and the same deterministic evaluator.
 
-The evaluation set should include both defective and valid changes. At least one difficult case should expose a failure mode that meaningfully changes the design.
+Ground truth and hidden benchmark-construction probes are not exposed to the reviewing agents. Agent trajectories are preserved for reproducibility.
 
 ## Project Method
 
@@ -90,13 +147,11 @@ baseline
       ↓
 measure failures
       ↓
-agent improvement
+smallest justified agent change
       ↓
 re-evaluate
       ↓
 keep / revise / remove
-      ↓
-final system
 ```
 
 The goal is not to build the most complex agent system. The goal is to build the smallest system whose design choices are supported by evidence.
@@ -109,27 +164,58 @@ The goal is not to build the most complex agent system. The goal is to build the
 ├── docs/
 │   ├── PROBLEM.md
 │   ├── EVALUATION.md
-│   └── ARCHITECTURE.md
+│   ├── ARCHITECTURE.md
+│   ├── TAXONOMY.md
+│   ├── BASELINE.md
+│   ├── ITERATION_1.md
+│   ├── ITERATION_1_IMPLEMENTATION.md
+│   └── ITERATION_1_RUNBOOK.md
 ├── experiments/
 │   └── CHANGELOG.md
-├── src/
-│   ├── baseline/
-│   ├── agent/
-│   └── shared/
+├── prompts/
+│   ├── baseline_review.md
+│   ├── candidate_review.md
+│   └── finding_admission.md
+├── schemas/
+│   ├── review.schema.json
+│   └── admission.schema.json
+├── iteration_1/
+│   ├── runner.py
+│   └── batch.py
 ├── evals/
 │   ├── cases/
-│   ├── ground_truth/
+│   ├── ground_truth.yaml
+│   ├── evaluator.py
 │   └── results/
-├── tests/
-└── trajectories/
-    ├── baseline/
-    └── advanced/
+└── tests/
 ```
 
-Implementation directories will be added only when needed.
+## Reproducibility
+
+The repository preserves:
+
+- frozen prompts and schemas;
+- deterministic evaluator and runner;
+- twelve benchmark cases;
+- baseline outputs;
+- Iteration 1 candidate, admission, final, and scored outputs;
+- all 24 Iteration 1 Codex Stage A/Stage B logs under `evals/results/iteration_1_logs/`;
+- diagnostic outputs that exposed benchmark fixture defects.
+
+See `docs/ITERATION_1_RUNBOOK.md` for the execution protocol and `experiments/CHANGELOG.md` for the full experiment history.
+
+## Current Result
+
+**Iteration 1 is the current best measured system.**
+
+It improves Production Defect Detection F1 from **0.880 to 0.957** and precision from **78.6% to 91.7%**, while keeping recall at **100%**.
+
+## Hot Take
+
+> The bottleneck in AI-assisted software engineering is shifting from code generation to evidence generation — and once agents generate enough plausible evidence, evidence admission becomes its own engineering problem.
+
+Strong review agents do not only need to find defects. They need a disciplined mechanism for deciding which findings are worth a human's attention.
 
 ## Status
 
-Planning and evaluation design.
-
-No advanced agent architecture is considered final until it demonstrates measurable improvement over the baseline.
+Core experiment complete. Current work is judge-facing packaging: reproducibility polish, representative trajectories, final demo flow, and presentation of measured results.
