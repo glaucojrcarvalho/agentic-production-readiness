@@ -1,5 +1,5 @@
-from src.db import connect
-from src.payments import process_payment
+from evals.cases.case_02.src.db import connect
+from evals.cases.case_02.src.payments import process_payment
 
 
 def test_retry_does_not_duplicate_business_side_effect() -> None:
