@@ -1,0 +1,22 @@
+{
+  "case_id": "case_09",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "state_transition",
+      "severity": "high",
+      "claim": "A cancelled order can be transitioned back to paid, resurrecting an order that should be terminal and allowing downstream payment or fulfillment processing to proceed for a cancelled order.",
+      "evidence": [
+        "evals/cases/case_09/src/orders.py:6 explicitly defines the transition from cancelled to paid.",
+        "evals/cases/case_09/src/orders.py:10-15 accepts every transition present in ALLOWED_TRANSITIONS without any additional guard.",
+        "A direct runtime check of transition_order({\"id\": 9, \"status\": \"cancelled\"}, \"paid\") returned {\"id\": 9, \"status\": \"paid\"}.",
+        "evals/cases/case_09/tests/test_orders.py:4-7 only tests created to paid and does not protect the terminal behavior of cancelled orders."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    }
+  ],
+  "uncertainties": [
+    "No business specification is included in the case; the review infers from standard order lifecycle semantics and the explicit terminal delivered state that cancelled orders must not be directly resurrected as paid."
+  ]
+}
