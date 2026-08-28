@@ -1,0 +1,22 @@
+{
+  "case_id": "case_08",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "performance",
+      "severity": "high",
+      "claim": "Listing users has unbounded O(U x O) work and an N+1 repository access pattern, so production-sized data can cause excessive datastore calls or CPU/latency and make the endpoint unavailable under load.",
+      "evidence": [
+        "src/users.py:15-16 iterates over every user returned by list_users() and invokes orders_for_user() separately for each user; there is no pagination or bulk count operation.",
+        "src/users.py:9-10 implements each orders_for_user() call as a full scan of all orders, making the in-memory implementation O(number_of_users x number_of_orders).",
+        "A runtime probe with 1,000 users observed exactly 1,000 calls to orders_for_user(), confirming that repository work grows linearly with the number of users before accounting for each call's full order scan.",
+        "The provided happy-path test passes but covers only two users and two orders, so it does not exercise production-scale behavior."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    }
+  ],
+  "uncertainties": [
+    "The case uses an in-memory repository, so the exact production latency and whether each repository call would be a network/database round trip cannot be measured from the provided code; the per-user call pattern and quadratic scan behavior are directly verified."
+  ]
+}
