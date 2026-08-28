@@ -29,7 +29,7 @@ Secondary metrics:
 
 ## Baseline
 
-**Status:** in progress
+**Status:** complete
 
 ### Pilot / Evaluation Harness Check
 
@@ -87,6 +87,29 @@ Because this was a real fixture defect rather than a reviewer false positive, th
 
 Decision: make the store's get/save operations concurrency-safe with a lock, add an explicit concurrent-delivery regression test, extend `verify_case_11()` to assert that both racing callers receive the same stored result, and rerun only `case_11` from a fresh baseline session before scoring the twelve-case benchmark.
 
+### Twelve-Case Scored Baseline
+
+After repairing and rerunning `case_11`, the frozen baseline was scored on all twelve cases.
+
+Observed aggregate metrics:
+
+| Metric | Result |
+|---|---:|
+| True positives | 11 |
+| False positives | 3 |
+| False negatives | 0 |
+| Precision | 0.786 |
+| Recall | 1.000 |
+| F1 | 0.880 |
+| Decision accuracy | 1.000 |
+| Evidence-grounded finding rate | 1.000 |
+
+The baseline detected every expected defect, correctly returned `ready` for both clean controls, and found both defects in the composite case. All three false positives came from `case_06`.
+
+`case_06` exposed two precision failure modes. First, the reviewer split one retry-policy root cause into multiple findings, so an additional retry-policy symptom was scored separately. Second, it promoted plausible hardening concerns about idempotency and argument validation into material findings even though those concerns were broader than the case's supported contract and intended failure mode.
+
+Decision: keep the current defect-discovery capability and target precision rather than recall in Iteration 1. Do not modify the benchmark, ground truth, taxonomy, or baseline outputs in response to these errors.
+
 ### Approach
 
 A general-purpose coding agent receives the evaluation repository/change and a direct instruction to review it for production readiness.
@@ -99,45 +122,68 @@ Establish the performance of a simple, reasonable agent workflow before introduc
 
 ### Evidence
 
-The three-case harness slice scored perfectly. Expanded-suite metrics are pending completion of baseline runs for cases 04–12 and a clean rerun of the repaired `case_11` fixture.
+The final twelve-case baseline scored precision 0.786, recall 1.000, F1 0.880, decision accuracy 1.000, and evidence-grounded finding rate 1.000.
 
 ### Decision / Learning
 
-Keep the frozen baseline protocol and expand the evaluation dataset before introducing solution complexity.
+The baseline is already strong at defect discovery. Its main measured weakness is over-reporting: candidate findings need stronger scope, materiality, and root-cause consolidation before they reach a human reviewer.
 
 ---
 
-## Iteration 1
+## Iteration 1 — Finding Admission and Consolidation
 
-**Status:** not started
+**Status:** planned
 
 ### Observation / Hypothesis
 
-TBD from expanded baseline failures.
+The expanded baseline produced no false negatives but three false positives, all concentrated in one retry-helper case. The reviewer is good at generating plausible and evidence-backed defect candidates, but it can over-promote secondary symptoms, generic hardening opportunities, or multiple manifestations of the same root cause.
+
+Hypothesis: adding an explicit evidence/scope critic followed by root-cause consolidation will improve precision without reducing recall.
 
 ### Change
 
-TBD.
+Introduce a post-discovery review stage that evaluates candidate findings before final output.
+
+The stage must:
+
+1. reject findings that are not supported by concrete code or runtime evidence;
+2. reject findings that depend on hypothetical callers, infrastructure, or requirements not present in the case contract or implementation;
+3. distinguish material production defects from hardening opportunities;
+4. merge findings that share the same underlying root cause and category when separate reporting would duplicate the same production failure;
+5. preserve distinct material defects even when they occur in the same file or function.
 
 ### Why
 
-TBD.
+The baseline already achieved recall 1.000. Adding more defect-finding breadth is not justified by the current evidence. The measured opportunity is to reduce reviewer noise while keeping every real defect.
+
+### Success Criteria
+
+Iteration 1 is considered an improvement only if:
+
+- precision is greater than 0.786;
+- recall remains 1.000;
+- F1 is greater than 0.880;
+- decision accuracy remains 1.000;
+- evidence-grounded finding rate remains 1.000.
+
+A perfect score is not assumed or required.
 
 ### Evidence
 
 | Metric | Before | After | Change |
 |---|---:|---:|---:|
-| F1 | TBD | TBD | TBD |
-| Precision | TBD | TBD | TBD |
-| Recall | TBD | TBD | TBD |
-| False-positive rate | TBD | TBD | TBD |
-| Evidence-grounded findings | TBD | TBD | TBD |
+| F1 | 0.880 | TBD | TBD |
+| Precision | 0.786 | TBD | TBD |
+| Recall | 1.000 | TBD | TBD |
+| False-positive count | 3 | TBD | TBD |
+| Evidence-grounded findings | 1.000 | TBD | TBD |
+| Decision accuracy | 1.000 | TBD | TBD |
 | Runtime/case | TBD | TBD | TBD |
 | Cost/case | TBD | TBD | TBD |
 
 ### Decision / Learning
 
-TBD: keep / revise / remove.
+TBD after running the same twelve cases through the Iteration 1 workflow.
 
 ---
 
@@ -211,4 +257,8 @@ Working hypothesis, to be rewritten from actual evidence:
 
 > The bottleneck in AI-assisted software engineering is shifting from code generation to evidence generation.
 
-This should only remain the final hot take if the experiments actually support it.
+A second evidence-backed refinement from the baseline is:
+
+> Once agents become good at finding plausible defects, deciding which findings deserve a human's attention becomes its own engineering problem.
+
+These should remain only if later experiments continue to support them.
