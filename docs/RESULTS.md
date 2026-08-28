@@ -64,6 +64,8 @@ This is intentionally not tuned to a perfect score. The remaining false positive
 
 The clean controls matter because earlier diagnostic runs exposed real fixture defects even though visible tests passed. Those failures forced the benchmark to define bounded contracts and strengthen the fixtures before scored evaluation.
 
+During the final audit, the original `case_03` contract was found to disclose that the case was a clean control and that its expected disposition was `ready`. That label leakage was removed. `case_03` was then rerun from fresh baseline and Iteration 1 sessions using only a neutral behavioral contract. Both systems still returned `ready` with zero findings, and both aggregate scorecards remained unchanged.
+
 ## Composite Case
 
 `case_12` contains two independent defects:
