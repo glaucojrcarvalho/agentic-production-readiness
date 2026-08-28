@@ -12,7 +12,7 @@ user
 Review evals/cases/case_03 for production readiness.
 
 Use:
-- prompts/candidate_review.md
+- prompts/baseline_review.md
 - schemas/review.schema.json
 
 Do not inspect or use:
@@ -21,86 +21,86 @@ Do not inspect or use:
 - outputs from other evaluation cases
 - benchmark scores or known expected defects
 
-Write only the schema-valid candidate review JSON to:
+Write only the schema-valid final review JSON to:
 
-evals/results/iteration_1/case_03/candidates.json
+evals/results/baseline/case_03.json
 
-Do not modify the case files. Follow prompts/candidate_review.md exactly.
-
+Do not modify the case files. Follow prompts/baseline_review.md exactly.
 codex
-I’ll inspect the review prompt, schema, and only the permitted case_03 materials, then validate the generated JSON before writing the requested result.
+I’ll review only the permitted case materials plus the specified prompt and schema, then validate the resulting JSON before writing the single requested output file.
 exec
-/usr/bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g 'prompts/candidate_review.md' -g 'schemas/review.schema.json' -g 'evals/cases/case_03/**' -g '"'!evals/ground_truth.yaml'"' -g '"'!evals/verify_cases.py'"' -g '"'!evals/results/**'"'" in [REPO_ROOT]
- succeeded in 0ms:
+/usr/bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g '"'!evals/ground_truth.yaml'"' -g '"'!evals/verify_cases.py'"' -g '"'!evals/results/**'"' . && printf '\\nCASE FILES\\n' && rg --files evals/cases/case_03 prompts/baseline_review.md schemas/review.schema.json" in [REPO_ROOT]
+ exited 1 in 0ms:
 [REPO_ROOT]
-schemas/review.schema.json
-prompts/candidate_review.md
-evals/cases/case_03/src/__pycache__/payments.cpython-314.pyc
-evals/cases/case_03/src/__pycache__/db.cpython-314.pyc
+
+exec
+/usr/bin/zsh -lc 'find .. -name AGENTS.md -print 2>/dev/null
+rg --files evals/cases/case_03 prompts schemas | sort' in [REPO_ROOT]
+ succeeded in 139ms:
+evals/cases/case_03/CONTRACT.md
 evals/cases/case_03/src/db.py
 evals/cases/case_03/src/payments.py
-evals/cases/case_03/tests/test_conflicting_request.py
-evals/cases/case_03/tests/test_single_request.py
 evals/cases/case_03/tests/conftest.py
-evals/cases/case_03/tests/__pycache__/test_process_lifecycle.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_validation.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_conflicting_request.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_concurrency.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_single_request.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/__pycache__/test_idempotency.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_cross_connection.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/__pycache__/test_transaction_ownership.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_validation.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/__pycache__/conftest.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/__pycache__/test_single_request.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_idempotency.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/__pycache__/test_concurrency.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/__pycache__/test_conflicting_request.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/__pycache__/conftest.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_cross_connection.cpython-314-pytest-9.0.2.pyc
-evals/cases/case_03/tests/__pycache__/test_transaction_ownership.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/__pycache__/test_process_lifecycle.cpython-314-pytest-8.4.2.pyc
-evals/cases/case_03/tests/test_idempotency.py
 evals/cases/case_03/tests/test_concurrency.py
-evals/cases/case_03/tests/test_validation.py
-evals/cases/case_03/tests/test_process_lifecycle.py
+evals/cases/case_03/tests/test_conflicting_request.py
 evals/cases/case_03/tests/test_cross_connection.py
+evals/cases/case_03/tests/test_idempotency.py
+evals/cases/case_03/tests/test_process_lifecycle.py
+evals/cases/case_03/tests/test_single_request.py
 evals/cases/case_03/tests/test_transaction_ownership.py
-evals/cases/case_03/CONTRACT.md
+evals/cases/case_03/tests/test_validation.py
+prompts/baseline_review.md
+prompts/candidate_review.md
+prompts/finding_admission.md
+schemas/admission.schema.json
+schemas/review.schema.json
 
 exec
-/usr/bin/zsh -lc "sed -n '1,240p' prompts/candidate_review.md && sed -n '1,260p' schemas/review.schema.json && sed -n '1,240p' evals/cases/case_03/CONTRACT.md && sed -n '1,260p' evals/cases/case_03/src/db.py && sed -n '1,320p' evals/cases/case_03/src/payments.py" in [REPO_ROOT]
+/usr/bin/zsh -lc "sed -n '1,240p' prompts/baseline_review.md
+sed -n '1,280p' schemas/review.schema.json
+for f in evals/cases/case_03/CONTRACT.md evals/cases/case_03/src/db.py evals/cases/case_03/src/payments.py evals/cases/case_03/tests/conftest.py evals/cases/case_03/tests/test_concurrency.py evals/cases/case_03/tests/test_conflicting_request.py evals/cases/case_03/tests/test_cross_connection.py evals/cases/case_03/tests/test_idempotency.py evals/cases/case_03/tests/test_process_lifecycle.py evals/cases/case_03/tests/test_single_request.py evals/cases/case_03/tests/test_transaction_ownership.py evals/cases/case_03/tests/test_validation.py; do
+  printf '\\n### %s\\n' \""'$f"
+  sed -n '"'1,320p' \""'$f"
+done' in [REPO_ROOT]
  succeeded in 0ms:
-You are the candidate-generation stage of a production-readiness review.
+You are reviewing a backend change for production readiness.
 
-Your task is to inspect one backend evaluation case and identify concrete material defects that may make it unsafe or unreliable in production.
+Your task is to identify material defects that could make this code unsafe or unreliable to deploy.
 
-You may inspect files in the provided case directory and run safe local commands or tests scoped to that case. You may create temporary local verification probes when useful, but do not modify the case itself.
+You may inspect files in the provided case directory and run local commands, including the test suite, when useful. Use concrete evidence from the code or runtime behavior. Do not speculate beyond what the repository supports.
 
-Do not inspect or use:
-- evals/ground_truth.yaml
-- evals/verify_cases.py
-- outputs from other evaluation cases
-- baseline or final benchmark scores
+Focus on production-impacting correctness and reliability issues. Ignore purely stylistic preferences unless they create a concrete operational risk.
 
-Use only the canonical categories permitted by schemas/review.schema.json.
+Return only valid JSON matching the required review schema.
 
-For each candidate finding:
-- describe one concrete failure mode;
-- use the most specific permitted category;
-- explain the material production impact;
-- provide code or runtime evidence a human can verify;
-- set verified=true only when the behavior was directly confirmed through execution or equally concrete evidence;
-- use confidence from 0.0 to 1.0;
-- avoid style-only concerns and unsupported speculation.
+Use exactly one of these canonical categories for each finding:
 
-This is a candidate-generation stage, so prefer retaining a well-supported material concern rather than suppressing it merely because another stage may later consolidate or reject it.
+- `transaction_consistency`
+- `idempotency`
+- `concurrency`
+- `authorization`
+- `retry_policy`
+- `error_handling`
+- `state_transition`
+- `performance`
+- `time_handling`
+- `validation`
+- `other`
 
-If you find no concrete material defect, return decision="ready" with an empty findings array.
+Choose the most specific category that matches the primary failure mode. Do not create new category names. Use `other` only when a material defect is well supported but none of the canonical categories applies.
 
-Return only valid JSON matching schemas/review.schema.json.
+For each finding:
 
-Do not modify the reviewed case.
+- describe one concrete defect;
+- assign the most specific canonical category you can justify;
+- explain the production impact in the claim;
+- include evidence a human reviewer can verify;
+- set `verified` to true only when you directly confirmed the behavior through execution or equally concrete evidence;
+- use confidence from 0.0 to 1.0.
+
+If you do not find a material production-readiness defect, return `decision: "ready"` with an empty `findings` array. Do not invent findings merely to appear thorough.
+
+Do not modify the code.
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.local/agentic-production-readiness/review.schema.json",
@@ -181,6 +181,8 @@ Do not modify the reviewed case.
     }
   }
 }
+
+### evals/cases/case_03/CONTRACT.md
 # Case 03 Production Contract
 
 Review the supplied `process_payment` implementation against the bounded production contract below.
@@ -204,6 +206,8 @@ Review the supplied `process_payment` implementation against the bounded product
 - Authorization is outside this case because no API or identity boundary is present.
 
 Base the review only on whether the supplied implementation satisfies this contract without material production-readiness defects in scope.
+
+### evals/cases/case_03/src/db.py
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -266,6 +270,8 @@ def reset_database() -> None:
 
 
 _initialize_database()
+
+### evals/cases/case_03/src/payments.py
 import sqlite3
 
 
@@ -336,10 +342,7 @@ def process_payment(
         conn.rollback()
         raise
 
-exec
-/usr/bin/zsh -lc 'for f in evals/cases/case_03/tests/*.py; do echo "FILE $f"; sed -n '"'1,300p' \""'$f"; done' in [REPO_ROOT]
- succeeded in 0ms:
-FILE evals/cases/case_03/tests/conftest.py
+### evals/cases/case_03/tests/conftest.py
 import pytest
 
 from evals.cases.case_03.src.db import reset_database
@@ -348,7 +351,8 @@ from evals.cases.case_03.src.db import reset_database
 @pytest.fixture(autouse=True)
 def _reset_case_database() -> None:
     reset_database()
-FILE evals/cases/case_03/tests/test_concurrency.py
+
+### evals/cases/case_03/tests/test_concurrency.py
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
@@ -375,7 +379,8 @@ def test_concurrent_duplicate_requests_converge_on_one_charge() -> None:
 
     assert first_charge_id == second_charge_id
     assert count == 1
-FILE evals/cases/case_03/tests/test_conflicting_request.py
+
+### evals/cases/case_03/tests/test_conflicting_request.py
 import pytest
 
 from evals.cases.case_03.src.db import connect
@@ -397,7 +402,8 @@ def test_same_key_with_different_payload_is_rejected() -> None:
     assert [(row["id"], row["amount_cents"]) for row in rows] == [
         (first_charge_id, 5000)
     ]
-FILE evals/cases/case_03/tests/test_cross_connection.py
+
+### evals/cases/case_03/tests/test_cross_connection.py
 from evals.cases.case_03.src.db import connect
 from evals.cases.case_03.src.payments import process_payment
 
@@ -413,7 +419,8 @@ def test_retry_on_another_connection_reuses_original_charge() -> None:
 
     assert retry_charge_id == first_charge_id
     assert count == 1
-FILE evals/cases/case_03/tests/test_idempotency.py
+
+### evals/cases/case_03/tests/test_idempotency.py
 from evals.cases.case_03.src.db import connect
 from evals.cases.case_03.src.payments import process_payment
 
@@ -428,7 +435,8 @@ def test_retry_reuses_original_charge() -> None:
 
     assert retry_charge_id == first_charge_id
     assert count == 1
-FILE evals/cases/case_03/tests/test_process_lifecycle.py
+
+### evals/cases/case_03/tests/test_process_lifecycle.py
 import json
 import subprocess
 import sys
@@ -462,7 +470,8 @@ print(json.dumps({'charge_id': charge_id, 'count': count}))
 
     assert result["charge_id"] == first_charge_id
     assert result["count"] == 1
-FILE evals/cases/case_03/tests/test_single_request.py
+
+### evals/cases/case_03/tests/test_single_request.py
 from evals.cases.case_03.src.db import connect
 from evals.cases.case_03.src.payments import process_payment
 
@@ -476,7 +485,8 @@ def test_single_request_creates_one_charge() -> None:
 
     assert charge_id == 1
     assert count == 1
-FILE evals/cases/case_03/tests/test_transaction_ownership.py
+
+### evals/cases/case_03/tests/test_transaction_ownership.py
 import pytest
 
 from evals.cases.case_03.src.db import connect
@@ -501,7 +511,8 @@ def test_payment_rejects_caller_owned_transaction_without_mutating_it() -> None:
     conn.rollback()
 
     assert conn.execute("SELECT COUNT(*) FROM caller_work").fetchone()[0] == 0
-FILE evals/cases/case_03/tests/test_validation.py
+
+### evals/cases/case_03/tests/test_validation.py
 import pytest
 
 from evals.cases.case_03.src.db import connect
@@ -530,24 +541,26 @@ def test_invalid_payment_input_is_rejected(request_id, amount_cents) -> None:
     assert conn.execute("SELECT COUNT(*) FROM idempotency_records").fetchone()[0] == 0
 
 codex
-The implementation aligns closely with the bounded contract so far. I’m checking runtime behavior and edge conditions now; I’ll only report material, contract-relevant defects rather than general SQLite or fixture-design concerns.
+The implementation’s transaction ordering and persistence model match the contract on inspection. I’m now running the case-local tests and will use the result to decide whether any material finding is warranted.
 exec
-/usr/bin/zsh -lc 'pytest -q evals/cases/case_03' in [REPO_ROOT]
- succeeded in 255ms:
+/usr/bin/zsh -lc 'pytest -q evals/cases/case_03/tests' in [REPO_ROOT]
+ succeeded in 303ms:
 ..............                                                           [100%]
 14 passed in 0.09s
 
 exec
-/usr/bin/zsh -lc 'mkdir -p evals/results/iteration_1/case_03' in [REPO_ROOT]
+/usr/bin/zsh -lc 'test -d evals/results/baseline && echo exists || echo missing' in [REPO_ROOT]
  succeeded in 0ms:
+exists
+
 apply patch
 patch: completed
-[REPO_ROOT]/evals/results/iteration_1/case_03/candidates.json
-diff --git a/evals/results/iteration_1/case_03/candidates.json b/evals/results/iteration_1/case_03/candidates.json
+[REPO_ROOT]/evals/results/baseline/case_03.json
+diff --git a/evals/results/baseline/case_03.json b/evals/results/baseline/case_03.json
 new file mode 100644
 index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
 --- /dev/null
-+++ b/evals/results/iteration_1/case_03/candidates.json
++++ b/evals/results/baseline/case_03.json
 @@ -0,0 +1,6 @@
 +{
 +  "case_id": "case_03",
@@ -556,11 +569,11 @@ index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba4
 +  "uncertainties": []
 +}
 
-diff --git a/evals/results/iteration_1/case_03/candidates.json b/evals/results/iteration_1/case_03/candidates.json
+diff --git a/evals/results/baseline/case_03.json b/evals/results/baseline/case_03.json
 new file mode 100644
 index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
 --- /dev/null
-+++ b/evals/results/iteration_1/case_03/candidates.json
++++ b/evals/results/baseline/case_03.json
 @@ -0,0 +1,6 @@
 +{
 +  "case_id": "case_03",
@@ -570,24 +583,34 @@ index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba4
 +}
 
 exec
-/usr/bin/zsh -lc "python - <<'PY'
-import json
-from pathlib import Path
-import jsonschema
-schema = json.loads(Path('schemas/review.schema.json').read_text())
-review = json.loads(Path('evals/results/iteration_1/case_03/candidates.json').read_text())
-jsonschema.validate(review, schema)
-print('schema-valid')
-PY
-git diff -- evals/results/iteration_1/case_03/candidates.json" in [REPO_ROOT]
- succeeded in 52ms:
-schema-valid
+/usr/bin/zsh -lc 'python -m jsonschema -i evals/results/baseline/case_03.json schemas/review.schema.json' in [REPO_ROOT]
+ exited 127 in 0ms:
+zsh:1: command not found: python
 
-diff --git a/evals/results/iteration_1/case_03/candidates.json b/evals/results/iteration_1/case_03/candidates.json
+diff --git a/evals/results/baseline/case_03.json b/evals/results/baseline/case_03.json
 new file mode 100644
 index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
 --- /dev/null
-+++ b/evals/results/iteration_1/case_03/candidates.json
++++ b/evals/results/baseline/case_03.json
+@@ -0,0 +1,6 @@
++{
++  "case_id": "case_03",
++  "decision": "ready",
++  "findings": [],
++  "uncertainties": []
++}
+
+exec
+/usr/bin/zsh -lc 'python3 -m jsonschema -i evals/results/baseline/case_03.json schemas/review.schema.json' in [REPO_ROOT]
+ succeeded in 95ms:
+/usr/lib/python3/dist-packages/jsonschema/__main__.py:4: DeprecationWarning: The jsonschema CLI is deprecated and will be removed in a future version. Please use check-jsonschema instead, which can be installed from https://pypi.org/project/check-jsonschema/
+  from jsonschema.cli import main
+
+diff --git a/evals/results/baseline/case_03.json b/evals/results/baseline/case_03.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
+--- /dev/null
++++ b/evals/results/baseline/case_03.json
 @@ -0,0 +1,6 @@
 +{
 +  "case_id": "case_03",
@@ -597,12 +620,12 @@ index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba4
 +}
 
 codex
-Created and schema-validated [candidates.json]([REPO_ROOT]/evals/results/iteration_1/case_03/candidates.json).
-diff --git a/evals/results/iteration_1/case_03/candidates.json b/evals/results/iteration_1/case_03/candidates.json
+{"case_id":"case_03","decision":"ready","findings":[],"uncertainties":[]}
+diff --git a/evals/results/baseline/case_03.json b/evals/results/baseline/case_03.json
 new file mode 100644
 index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
 --- /dev/null
-+++ b/evals/results/iteration_1/case_03/candidates.json
++++ b/evals/results/baseline/case_03.json
 @@ -0,0 +1,6 @@
 +{
 +  "case_id": "case_03",
@@ -612,5 +635,5 @@ index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba4
 +}
 
 tokens used
-14,791
-Created and schema-validated [candidates.json]([REPO_ROOT]/evals/results/iteration_1/case_03/candidates.json).
+17,545
+{"case_id":"case_03","decision":"ready","findings":[],"uncertainties":[]}
