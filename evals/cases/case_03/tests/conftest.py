@@ -1,5 +1,8 @@
-from pathlib import Path
-import sys
+import pytest
 
-CASE_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(CASE_ROOT))
+from evals.cases.case_03.src.db import reset_database
+
+
+@pytest.fixture(autouse=True)
+def _reset_case_database() -> None:
+    reset_database()
