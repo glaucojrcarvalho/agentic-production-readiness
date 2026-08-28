@@ -29,19 +29,19 @@ Secondary metrics:
 
 ## Baseline
 
-**Status:** planned
+**Status:** in progress
 
 ### Pilot / Evaluation Harness Check
 
 The baseline agent reviewed `evals/cases/case_01` and correctly identified that committing the order before writing its audit record makes the operation non-atomic. It verified the failure by running the case tests: the transaction-consistency test failed because the order remained persisted after the simulated audit failure, while the happy-path test passed.
 
-The finding used the category `data_consistency`; the hidden ground truth uses `transaction_consistency`. Because the current evaluator requires an exact category match, this substantively correct finding could be scored incorrectly due only to taxonomy wording. Before scored baseline runs, we will freeze a canonical defect taxonomy so agent output, ground truth, and evaluator expectations share the same category definitions. This harness pilot is diagnostic and will not count toward final baseline metrics.
+The finding used the category `data_consistency`; the hidden ground truth uses `transaction_consistency`. Because the current evaluator requires an exact category match, this substantively correct finding could be scored incorrectly due only to taxonomy wording. Before scored baseline runs, we froze a canonical defect taxonomy so agent output, ground truth, and evaluator expectations share the same category definitions. This harness pilot is diagnostic and does not count toward final baseline metrics.
 
 ### Pilot / Clean-Control Fixture Check
 
 The first baseline run on `evals/cases/case_03` did not treat the intended clean control as ready. After the supplied tests passed, the agent ran additional probes and produced concrete evidence for four behaviors that the fixture did not cover: idempotency state was isolated per SQLite `:memory:` connection, simultaneous duplicate requests could surface a uniqueness error rather than replay the winning result, the payment function could interfere with a caller-owned transaction, and invalid payment values were accepted.
 
-Because `case_03` is intended to be a true-negative control for false-positive measurement, these findings exposed a fixture-design problem rather than a baseline miss. The result is diagnostic and will not count toward final baseline metrics.
+Because `case_03` is intended to be a true-negative control for false-positive measurement, these findings exposed a fixture-design problem rather than a baseline miss. The result is diagnostic and does not count toward final baseline metrics.
 
 Decision: repair the clean control before scoring it. The revised fixture shared state across independent database connections, serialized competing writers before the idempotency check, attempted to preserve caller transaction ownership, validated basic payment inputs, and added regression tests for cross-connection replay, concurrent duplicates, nested transaction behavior, and invalid inputs.
 
@@ -52,6 +52,32 @@ A fresh baseline run against the repaired `case_03` still produced verified find
 This second diagnostic showed that making visible tests pass was not enough to define a clean benchmark case. The fixture lacked a bounded production contract, which allowed accidental behavior to remain in scope.
 
 Decision: define the clean-control contract explicitly and repair the fixture to that contract before any scored run. `process_payment` now owns its transaction and rejects already-active caller transactions without mutating them; `request_id` must be a non-empty string; `amount_cents` must be a positive integer; database constraints also enforce integer positive cents; persistent state is no longer deleted on module import or process exit; and a process-boundary regression test verifies replay survives a separate Python process. The two earlier `case_03` outputs remain diagnostic and are excluded from baseline metrics.
+
+### Three-Case Scored Harness Slice
+
+After freezing the taxonomy and repairing the clean control, the baseline was rerun from fresh sessions on `case_01`, `case_02`, and `case_03`.
+
+Observed aggregate metrics:
+
+| Metric | Result |
+|---|---:|
+| Precision | 1.00 |
+| Recall | 1.00 |
+| F1 | 1.00 |
+| Decision accuracy | 1.00 |
+| Evidence-grounded finding rate | 1.00 |
+
+The result validates the evaluator, schema, prompt isolation, and true-negative handling, but it does not provide headroom for measuring an improved agentic workflow.
+
+Decision: do not optimize the advanced workflow against this three-case slice. Expand the benchmark first, while the baseline prompt remains frozen.
+
+### Dataset Expansion Before Optimization
+
+Cases `case_04` through `case_12` were added before any advanced reviewer architecture was implemented. The expanded suite introduces concurrency, authorization, retry-policy, error-handling, performance, state-transition, time-handling, a second clean control, and a composite multi-defect case.
+
+The new cases are intentionally harder than the harness slice: their visible tests mainly cover normal behavior, while deterministic benchmark-construction probes live outside the reviewer-visible case directory. `case_11`, like `case_03`, has a bounded clean-control contract to prevent accidental requirements from corrupting false-positive measurement.
+
+Decision: run the frozen baseline independently on all twelve cases before choosing any advanced orchestration, tools, or specialized verification strategy. Improvements must be driven by observed failures on this expanded baseline rather than by knowledge of the hidden ground truth.
 
 ### Approach
 
@@ -65,11 +91,11 @@ Establish the performance of a simple, reasonable agent workflow before introduc
 
 ### Evidence
 
-TBD after the evaluation dataset and baseline runner are implemented.
+The three-case harness slice scored perfectly. Expanded-suite metrics are pending completion of baseline runs for cases 04–12.
 
 ### Decision / Learning
 
-TBD.
+Keep the frozen baseline protocol and expand the evaluation dataset before introducing solution complexity.
 
 ---
 
@@ -79,7 +105,7 @@ TBD.
 
 ### Observation / Hypothesis
 
-TBD from baseline failures.
+TBD from expanded baseline failures.
 
 ### Change
 
