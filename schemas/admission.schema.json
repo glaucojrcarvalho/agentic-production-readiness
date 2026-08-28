@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/admission.schema.json",
+  "title": "Finding Admission Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "adjudications", "merge_groups", "final_review"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "adjudications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_index",
+          "outcome",
+          "reason",
+          "evidence_summary",
+          "scope_assessment",
+          "materiality_assessment"
+        ],
+        "properties": {
+          "candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["admit", "reject", "merge"]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "supported_material_finding",
+              "unsupported",
+              "out_of_scope",
+              "not_material",
+              "hardening_only",
+              "duplicate_root_cause",
+              "other"
+            ]
+          },
+          "merge_into": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "evidence_summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope_assessment": {
+            "type": "string",
+            "minLength": 1
+          },
+          "materiality_assessment": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "outcome": {"const": "merge"}
+              }
+            },
+            "then": {
+              "required": ["merge_into"],
+              "properties": {
+                "reason": {"const": "duplicate_root_cause"},
+                "merge_into": {"type": "integer"}
+              }
+            },
+            "else": {
+              "properties": {
+                "merge_into": {"type": "null"}
+              }
+            }
+          }
+        ]
+      }
+    },
+    "merge_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target_candidate_index", "merged_candidate_indices", "root_cause"],
+        "properties": {
+          "target_candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "merged_candidate_indices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "root_cause": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "final_review": {
+      "$ref": "review.schema.json"
+    }
+  }
+}
