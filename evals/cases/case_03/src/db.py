@@ -1,4 +1,3 @@
-import atexit
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -26,12 +25,16 @@ def _initialize_database() -> None:
             """
             CREATE TABLE IF NOT EXISTS charges (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                amount_cents INTEGER NOT NULL CHECK (amount_cents > 0)
+                amount_cents INTEGER NOT NULL CHECK (
+                    typeof(amount_cents) = 'integer' AND amount_cents > 0
+                )
             );
 
             CREATE TABLE IF NOT EXISTS idempotency_records (
                 request_id TEXT PRIMARY KEY CHECK (length(trim(request_id)) > 0),
-                amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
+                amount_cents INTEGER NOT NULL CHECK (
+                    typeof(amount_cents) = 'integer' AND amount_cents > 0
+                ),
                 charge_id INTEGER NOT NULL,
                 FOREIGN KEY (charge_id) REFERENCES charges(id)
             );
@@ -40,12 +43,14 @@ def _initialize_database() -> None:
 
 
 def connect() -> sqlite3.Connection:
-    """Return a connection to the same local database used by this case."""
+    """Return a connection to the persistent local database used by this case."""
+    _initialize_database()
     return _new_connection()
 
 
 def reset_database() -> None:
-    """Reset shared state between tests while preserving connection semantics."""
+    """Reset shared state between tests without changing production lifecycle semantics."""
+    _initialize_database()
     with _new_connection() as conn:
         conn.execute("BEGIN IMMEDIATE")
         conn.execute("DELETE FROM idempotency_records")
@@ -54,15 +59,4 @@ def reset_database() -> None:
         conn.commit()
 
 
-def _cleanup_database() -> None:
-    for suffix in ("", "-wal", "-shm"):
-        path = Path(f"{_DATABASE_PATH}{suffix}")
-        try:
-            path.unlink()
-        except FileNotFoundError:
-            pass
-
-
-_cleanup_database()
 _initialize_database()
-atexit.register(_cleanup_database)
