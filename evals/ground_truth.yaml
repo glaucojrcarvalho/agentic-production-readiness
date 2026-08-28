@@ -60,3 +60,194 @@ cases:
       - idempotency
       - transaction_consistency
       - speculative_concurrency_risk
+
+  - case_id: case_04
+    title: oversubscription under concurrent reservation
+    expected_status: defective
+    defects:
+      - id: D1
+        category: concurrency
+        severity: high
+        description: >-
+          Inventory reservation uses an unsynchronized read-modify-write sequence,
+          so concurrent callers can both reserve the same final unit.
+        expected_evidence:
+          - two concurrent reservations can both report success against one unit
+          - both calls read the same pre-update quantity
+          - the operation has no lock or atomic compare-and-update boundary
+        verification:
+          command: python evals/verify_cases.py case_04
+          expected_result: reproduces_defect
+    non_findings:
+      - authorization
+      - idempotency
+
+  - case_id: case_05
+    title: cross-tenant invoice read
+    expected_status: defective
+    defects:
+      - id: D1
+        category: authorization
+        severity: high
+        description: >-
+          Invoice retrieval accepts a tenant identity but does not enforce it,
+          allowing one tenant to read another tenant's invoice by identifier.
+        expected_evidence:
+          - actor_tenant_id is not used in the authorization decision
+          - a cross-tenant request returns the target invoice
+        verification:
+          command: python evals/verify_cases.py case_05
+          expected_result: reproduces_defect
+    non_findings:
+      - idempotency
+      - transaction_consistency
+
+  - case_id: case_06
+    title: indiscriminate retry of permanent failure
+    expected_status: defective
+    defects:
+      - id: D1
+        category: retry_policy
+        severity: medium
+        description: >-
+          The retry helper retries every exception, including deterministic
+          non-retryable failures, multiplying load and side effects without a
+          chance of recovery.
+        expected_evidence:
+          - a permanent ValueError is attempted repeatedly
+          - retryability is not classified before another attempt
+        verification:
+          command: python evals/verify_cases.py case_06
+          expected_result: reproduces_defect
+    non_findings:
+      - error_handling
+      - concurrency
+
+  - case_id: case_07
+    title: worker reports failure as success
+    expected_status: defective
+    defects:
+      - id: D1
+        category: error_handling
+        severity: high
+        description: >-
+          The job wrapper catches arbitrary handler failures and reports a
+          successful status, hiding failed work from callers and monitoring.
+        expected_evidence:
+          - a raised handler exception is swallowed
+          - the returned status is still ok
+        verification:
+          command: python evals/verify_cases.py case_07
+          expected_result: reproduces_defect
+    non_findings:
+      - retry_policy
+      - authorization
+
+  - case_id: case_08
+    title: per-user order lookup amplification
+    expected_status: defective
+    defects:
+      - id: D1
+        category: performance
+        severity: medium
+        description: >-
+          Listing users performs one order lookup per user after the initial user
+          query, producing N+1-style query amplification as the result set grows.
+        expected_evidence:
+          - one list operation plus one orders_for_user call per user
+          - query count grows linearly with user count beyond the initial query
+        verification:
+          command: python evals/verify_cases.py case_08
+          expected_result: reproduces_defect
+    non_findings:
+      - concurrency
+      - state_transition
+
+  - case_id: case_09
+    title: cancelled order can be revived
+    expected_status: defective
+    defects:
+      - id: D1
+        category: state_transition
+        severity: high
+        description: >-
+          A terminal cancelled order is allowed to transition back to paid,
+          violating the order lifecycle and allowing cancelled work to resume.
+        expected_evidence:
+          - cancelled includes paid in its allowed transitions
+          - a cancelled order can be transitioned to paid successfully
+        verification:
+          command: python evals/verify_cases.py case_09
+          expected_result: reproduces_defect
+    non_findings:
+      - authorization
+      - time_handling
+
+  - case_id: case_10
+    title: timezone-offset expiration comparison
+    expected_status: defective
+    defects:
+      - id: D1
+        category: time_handling
+        severity: high
+        description: >-
+          Token expiration discards timezone offsets before comparison, so two
+          aware datetimes representing real instants can be ordered incorrectly.
+        expected_evidence:
+          - tzinfo is removed before comparison
+          - an already-expired token can be reported as unexpired across offsets
+        verification:
+          command: python evals/verify_cases.py case_10
+          expected_result: reproduces_defect
+    non_findings:
+      - validation
+      - concurrency
+
+  - case_id: case_11
+    title: clean replay-safe webhook handler
+    expected_status: ready
+    defects: []
+    expected_invariants:
+      - a first delivery is stored and returned
+      - a repeated event identifier returns the stored result
+      - empty event identifiers are rejected
+      - duplicate-save races recover by reading the winning result
+    verification:
+      command: python evals/verify_cases.py case_11
+      expected_result: pass
+    non_findings:
+      - idempotency
+      - concurrency
+      - validation
+
+  - case_id: case_12
+    title: credit issuance with multiple production defects
+    expected_status: defective
+    defects:
+      - id: D1
+        category: authorization
+        severity: high
+        description: >-
+          Credit issuance accepts an actor account identity but does not verify
+          that the actor is allowed to credit the requested target account.
+        expected_evidence:
+          - actor_account_id is unused
+          - one account can issue credit to a different account
+        verification:
+          command: python evals/verify_cases.py case_12
+          expected_result: reproduces_defect
+      - id: D2
+        category: idempotency
+        severity: high
+        description: >-
+          Credit issuance records every request without checking request_id, so a
+          retry of the same logical operation creates duplicate ledger entries.
+        expected_evidence:
+          - request_id is stored but never checked
+          - the same request_id creates multiple credit entries
+        verification:
+          command: python evals/verify_cases.py case_12
+          expected_result: reproduces_defect
+    non_findings:
+      - transaction_consistency
+      - time_handling
