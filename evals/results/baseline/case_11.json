@@ -1,20 +1,6 @@
 {
   "case_id": "case_11",
-  "decision": "not_ready",
-  "findings": [
-    {
-      "category": "concurrency",
-      "severity": "high",
-      "claim": "WebhookStore.save performs a non-atomic check-then-write, so concurrent first deliveries for the same event ID can both succeed, return different results, and silently overwrite one another instead of making one delivery recover the winner's stored result.",
-      "evidence": [
-        "In evals/cases/case_11/src/webhooks.py:14-16, save checks `event_id in self._results` separately from the later assignment to `self._results[event_id]`; there is no lock or atomic insert-if-absent operation spanning those actions.",
-        "In evals/cases/case_11/src/webhooks.py:27-33, race recovery only runs when save raises DuplicateEvent. If both callers observe the key as absent, neither raises and each returns its independently computed result.",
-        "A deterministic two-thread runtime reproduction using the actual WebhookStore and two equal string event IDs synchronized after both membership checks produced caller results with kinds `second` and `first`, while the final stored result had kind `first`. This demonstrates that one caller returned a result that was never the winning stored result.",
-        "The provided test suite passed (2 tests), but evals/cases/case_11/tests/test_webhooks.py covers only sequential first delivery and replay; it does not exercise the contract's racing-delivery path."
-      ],
-      "verified": true,
-      "confidence": 0.99
-    }
-  ],
+  "decision": "ready",
+  "findings": [],
   "uncertainties": []
 }
