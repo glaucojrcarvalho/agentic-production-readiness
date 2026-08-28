@@ -1,0 +1,21 @@
+{
+  "case_id": "case_07",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "error_handling",
+      "severity": "high",
+      "claim": "Handler failures are swallowed and falsely reported as successful jobs, so callers can acknowledge failed work, suppress retries and alerts, and continue after required side effects did not occur.",
+      "evidence": [
+        "evals/cases/case_07/src/jobs.py:5-9 catches every Exception from the handler and returns {\"status\": \"ok\", \"result\": None} instead of propagating or returning a failure status.",
+        "A direct runtime check with run_job(lambda: 1 / 0) returned {'status': 'ok', 'result': None}, confirming that a ZeroDivisionError is indistinguishable from a successful handler that returned None.",
+        "evals/cases/case_07/tests/test_jobs.py:4-5 tests only the success path; pytest passes while the false-success failure behavior remains unguarded."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": [
+    "The case does not include caller or queue integration code, so the exact downstream acknowledgement and retry mechanism cannot be observed; however, run_job's returned status is definitively incorrect on handler failure."
+  ]
+}
