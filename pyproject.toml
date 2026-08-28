@@ -1,0 +1,15 @@
+[project]
+name = "agentic-production-readiness"
+version = "0.1.0"
+description = "Evaluation-driven agentic production readiness reviewer"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["evals/cases"]
