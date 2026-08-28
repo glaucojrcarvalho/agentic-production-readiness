@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
