@@ -1,0 +1,62 @@
+cases:
+  - case_id: case_01
+    title: partial transaction failure
+    expected_status: defective
+    defects:
+      - id: D1
+        category: transaction_consistency
+        severity: high
+        description: >-
+          A single business operation performs related writes without an atomic
+          transaction, so failure after the first write can leave partial
+          persisted state.
+        expected_evidence:
+          - the first business record remains persisted after the operation fails
+          - the related second record is absent
+          - the state-consistency invariant fails
+        verification:
+          command: pytest evals/cases/case_01/tests/test_transaction_consistency.py -q
+          expected_result: fail_before_fix
+    non_findings:
+      - sql_injection
+      - authorization_failure
+      - n_plus_one_query
+
+  - case_id: case_02
+    title: duplicate side effect on retry
+    expected_status: defective
+    defects:
+      - id: D1
+        category: idempotency
+        severity: high
+        description: >-
+          Replaying the same logical request can execute the business side effect
+          more than once because request identity is not durably persisted and
+          checked as part of the operation.
+        expected_evidence:
+          - the same logical request is submitted twice
+          - both executions create a side effect
+          - more than one side effect exists for one logical operation
+        verification:
+          command: pytest evals/cases/case_02/tests/test_idempotency.py -q
+          expected_result: fail_before_fix
+    non_findings:
+      - authorization_failure
+      - transaction_consistency
+      - input_validation
+
+  - case_id: case_03
+    title: clean idempotent implementation
+    expected_status: ready
+    defects: []
+    expected_invariants:
+      - the first request creates exactly one side effect
+      - replaying the same logical request does not create another side effect
+      - conflicting reuse of an idempotency key is rejected deterministically
+    verification:
+      command: pytest evals/cases/case_03/tests -q
+      expected_result: pass
+    non_findings:
+      - idempotency
+      - transaction_consistency
+      - speculative_concurrency_risk
