@@ -202,7 +202,36 @@ The repository preserves:
 - all 24 Iteration 1 Codex Stage A/Stage B logs under `evals/results/iteration_1_logs/`;
 - diagnostic outputs that exposed benchmark fixture defects.
 
-See `docs/ITERATION_1_RUNBOOK.md` for the execution protocol and `experiments/CHANGELOG.md` for the full experiment history.
+### Clean-checkout verification
+
+On Ubuntu/Debian, create the virtual environment with `python3` because a global `python` command is not guaranteed:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+
+python -m pytest tests/test_iteration_1_runner.py -q
+python -m iteration_1.runner materialize-scored
+python evals/evaluator.py evals/results/iteration_1_scored
+```
+
+Expected deterministic score:
+
+```text
+true positives = 11
+false positives = 1
+false negatives = 0
+precision = 0.9166666666666666
+recall = 1.0
+F1 = 0.9565217391304348
+decision accuracy = 1.0
+evidence-grounded finding rate = 1.0
+```
+
+Running the entire benchmark test tree with `python -m pytest -q` is **not** expected to be green. `case_01` and `case_02` intentionally contain planted production defects, and their invariant tests fail by design to demonstrate transaction-consistency and idempotency failures. A clean checkout currently reports **2 expected benchmark failures and 27 passing tests**. The deterministic runner tests are the project smoke test for the orchestration code.
+
+See `docs/ITERATION_1_RUNBOOK.md` for the execution protocol, `docs/RESULTS.md` for the measured comparison, `docs/TRAJECTORIES.md` for representative agent behavior, `docs/DEMO.md` for the demo flow, and `experiments/CHANGELOG.md` for the full experiment history.
 
 ## Current Result
 
@@ -218,4 +247,4 @@ Strong review agents do not only need to find defects. They need a disciplined m
 
 ## Status
 
-Core experiment complete. Current work is judge-facing packaging: reproducibility polish, representative trajectories, final demo flow, and presentation of measured results.
+Core experiment and clean-checkout reproducibility verification complete. Current work is final judge-facing packaging and video presentation.
