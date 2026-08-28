@@ -1,7 +1,7 @@
 import pytest
 
-from src.db import connect
-from src.payments import IdempotencyConflict, process_payment
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import IdempotencyConflict, process_payment
 
 
 def test_same_key_with_different_payload_is_rejected() -> None:
