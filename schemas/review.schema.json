@@ -30,7 +30,19 @@
         "properties": {
           "category": {
             "type": "string",
-            "minLength": 1
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
           },
           "severity": {
             "type": "string",
