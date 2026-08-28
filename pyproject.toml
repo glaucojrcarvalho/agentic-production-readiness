@@ -18,5 +18,5 @@ dev = [
 packages = []
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-ra --import-mode=importlib"
 testpaths = ["evals/cases"]
