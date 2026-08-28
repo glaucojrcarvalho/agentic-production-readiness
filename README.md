@@ -2,6 +2,17 @@
 
 An evidence-driven agentic workflow for reviewing AI-generated backend changes before they reach production.
 
+## Judge Quick Path
+
+If you have only a few minutes, read these in order:
+
+1. [`docs/RESULTS.md`](docs/RESULTS.md) — measured baseline vs Iteration 1 comparison.
+2. [`docs/TRAJECTORIES.md`](docs/TRAJECTORIES.md) — representative agent behavior, including the precision stress test.
+3. [`docs/DEMO.md`](docs/DEMO.md) — the ≤5-minute demonstration flow.
+4. [`experiments/CHANGELOG.md`](experiments/CHANGELOG.md) — full experiment history, including failed benchmark assumptions and design changes.
+
+Current best result: **F1 0.957, precision 0.917, recall 1.000** on the frozen 12-case benchmark.
+
 ## Problem
 
 AI-generated backend code can look convincing, compile successfully, and pass happy-path tests while still containing production risks such as race conditions, missing idempotency, unsafe retries, broken transaction boundaries, authorization mistakes, N+1 queries, weak error handling, and missing observability.
@@ -169,7 +180,10 @@ The goal is not to build the most complex agent system. The goal is to build the
 │   ├── BASELINE.md
 │   ├── ITERATION_1.md
 │   ├── ITERATION_1_IMPLEMENTATION.md
-│   └── ITERATION_1_RUNBOOK.md
+│   ├── ITERATION_1_RUNBOOK.md
+│   ├── RESULTS.md
+│   ├── TRAJECTORIES.md
+│   └── DEMO.md
 ├── experiments/
 │   └── CHANGELOG.md
 ├── prompts/
@@ -211,7 +225,10 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
 
-python -m pytest tests/test_iteration_1_runner.py -q
+# Project/orchestration smoke tests — expected green.
+python -m pytest -q
+
+# Re-materialize and reproduce the frozen score.
 python -m iteration_1.runner materialize-scored
 python evals/evaluator.py evals/results/iteration_1_scored
 ```
@@ -229,7 +246,15 @@ decision accuracy = 1.0
 evidence-grounded finding rate = 1.0
 ```
 
-Running the entire benchmark test tree with `python -m pytest -q` is **not** expected to be green. `case_01` and `case_02` intentionally contain planted production defects, and their invariant tests fail by design to demonstrate transaction-consistency and idempotency failures. A clean checkout currently reports **2 expected benchmark failures and 27 passing tests**. The deterministic runner tests are the project smoke test for the orchestration code.
+### Benchmark defect tests
+
+The benchmark cases are **not** the project's default pytest target because some cases deliberately encode production defects. To inspect the benchmark tests directly, run:
+
+```bash
+python -m pytest evals/cases -q
+```
+
+That command is expected to include intentional failures for planted defects such as the transaction-consistency failure in `case_01` and idempotency failure in `case_02`. Those failures are benchmark evidence, not orchestration regressions.
 
 See `docs/ITERATION_1_RUNBOOK.md` for the execution protocol, `docs/RESULTS.md` for the measured comparison, `docs/TRAJECTORIES.md` for representative agent behavior, `docs/DEMO.md` for the demo flow, and `experiments/CHANGELOG.md` for the full experiment history.
 
