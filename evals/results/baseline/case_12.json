@@ -1,0 +1,34 @@
+{
+  "case_id": "case_12",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "authorization",
+      "severity": "critical",
+      "claim": "Any caller can issue credit to any target account because actor_account_id is never checked, allowing unauthorized financial balance changes.",
+      "evidence": [
+        "In src/credits.py:16-26, issue_credit accepts actor_account_id but never reads it and unconditionally calls ledger.add with target_account_id after only validating that the amount is positive.",
+        "A runtime call with actor_account_id='acct-attacker' and target_account_id='acct-victim' succeeded and appended a 2500-cent credit for acct-victim.",
+        "tests/test_credits.py:4-16 covers only actor_account_id equal to target_account_id, so it does not exercise or reject cross-account issuance."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "idempotency",
+      "severity": "high",
+      "claim": "Retries with the same request_id create duplicate credits, so a client or transport retry can credit an account multiple times for one logical request.",
+      "evidence": [
+        "In src/credits.py:5-13, CreditLedger.add stores request_id but performs no lookup or uniqueness check before appending a new entry.",
+        "Two runtime calls using the same actor, target, amount, and request_id='req-retry' returned distinct entry IDs 2 and 3 and both remained in the ledger.",
+        "tests/test_credits.py contains only one issue_credit call and has no replay or duplicate-request assertion."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    }
+  ],
+  "uncertainties": [
+    "The case does not define which actors, if any, should be authorized to issue cross-account credits; however, the complete absence of any use of actor_account_id means no authorization policy can be enforced by this operation.",
+    "The case does not specify whether CreditLedger is shared across threads or processes, so concurrency and durability risks of its in-memory list were not elevated to separate findings."
+  ]
+}
