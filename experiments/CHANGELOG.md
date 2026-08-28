@@ -31,6 +31,12 @@ Secondary metrics:
 
 **Status:** planned
 
+### Pilot / Evaluation Harness Check
+
+The baseline agent reviewed `evals/cases/case_01` and correctly identified that committing the order before writing its audit record makes the operation non-atomic. It verified the failure by running the case tests: the transaction-consistency test failed because the order remained persisted after the simulated audit failure, while the happy-path test passed.
+
+The finding used the category `data_consistency`; the hidden ground truth uses `transaction_consistency`. Because the current evaluator requires an exact category match, this substantively correct finding could be scored incorrectly due only to taxonomy wording. Before scored baseline runs, we will freeze a canonical defect taxonomy so agent output, ground truth, and evaluator expectations share the same category definitions. This harness pilot is diagnostic and will not count toward final baseline metrics.
+
 ### Approach
 
 A general-purpose coding agent receives the evaluation repository/change and a direct instruction to review it for production readiness.
