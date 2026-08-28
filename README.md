@@ -8,8 +8,7 @@ If you have only a few minutes, read these in order:
 
 1. [`docs/RESULTS.md`](docs/RESULTS.md) — measured baseline vs Iteration 1 comparison.
 2. [`docs/TRAJECTORIES.md`](docs/TRAJECTORIES.md) — representative agent behavior, including the precision stress test.
-3. [`docs/DEMO.md`](docs/DEMO.md) — the ≤5-minute demonstration flow.
-4. [`experiments/CHANGELOG.md`](experiments/CHANGELOG.md) — full experiment history, including failed benchmark assumptions and design changes.
+3. [`experiments/CHANGELOG.md`](experiments/CHANGELOG.md) — full experiment history, including failed benchmark assumptions and design changes.
 
 Current best result: **F1 0.957, precision 0.917, recall 1.000** on the frozen 12-case benchmark.
 
@@ -182,8 +181,7 @@ The goal is not to build the most complex agent system. The goal is to build the
 │   ├── ITERATION_1_IMPLEMENTATION.md
 │   ├── ITERATION_1_RUNBOOK.md
 │   ├── RESULTS.md
-│   ├── TRAJECTORIES.md
-│   └── DEMO.md
+│   └── TRAJECTORIES.md
 ├── experiments/
 │   └── CHANGELOG.md
 ├── prompts/
@@ -256,7 +254,7 @@ python -m pytest evals/cases -q
 
 That command is expected to include intentional failures for planted defects such as the transaction-consistency failure in `case_01` and idempotency failure in `case_02`. Those failures are benchmark evidence, not orchestration regressions.
 
-See `docs/ITERATION_1_RUNBOOK.md` for the execution protocol, `docs/RESULTS.md` for the measured comparison, `docs/TRAJECTORIES.md` for representative agent behavior, `docs/DEMO.md` for the demo flow, and `experiments/CHANGELOG.md` for the full experiment history.
+See `docs/ITERATION_1_RUNBOOK.md` for the execution protocol, `docs/RESULTS.md` for the measured comparison, `docs/TRAJECTORIES.md` for representative agent behavior, and `experiments/CHANGELOG.md` for the full experiment history.
 
 ## Current Result
 
