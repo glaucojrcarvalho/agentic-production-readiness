@@ -1,0 +1,19 @@
+{
+  "case_id": "case_01",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "transaction_consistency",
+      "severity": "high",
+      "claim": "Order creation is not atomic: if the audit step fails after the order commit, the operation reports failure while leaving an order permanently stored without its required audit record.",
+      "evidence": [
+        "evals/cases/case_01/src/orders.py:17-28 inserts the order, commits it at line 25, and can then raise before inserting the audit record.",
+        "evals/cases/case_01/src/orders.py:30-34 performs and commits the audit insert separately, so the two writes do not share one transaction.",
+        "Running `pytest -q evals/cases/case_01/tests` produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, although the required atomic result was 0 orders and 0 audit records."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}
