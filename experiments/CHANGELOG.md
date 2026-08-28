@@ -132,7 +132,7 @@ The baseline is already strong at defect discovery. Its main measured weakness i
 
 ## Iteration 1 — Finding Admission and Consolidation
 
-**Status:** planned
+**Status:** complete
 
 ### Observation / Hypothesis
 
@@ -142,48 +142,65 @@ Hypothesis: adding an explicit evidence/scope critic followed by root-cause cons
 
 ### Change
 
-Introduce a post-discovery review stage that evaluates candidate findings before final output.
+Iteration 1 uses two fresh model stages per case:
 
-The stage must:
+1. **Candidate reviewer** — broadly identifies concrete, material production-readiness concerns and gathers evidence.
+2. **Admission critic + consolidator** — adjudicates every candidate against concrete failure, evidence, scope, materiality, and independence before producing the final review.
 
-1. reject findings that are not supported by concrete code or runtime evidence;
-2. reject findings that depend on hypothetical callers, infrastructure, or requirements not present in the case contract or implementation;
-3. distinguish material production defects from hardening opportunities;
-4. merge findings that share the same underlying root cause and category when separate reporting would duplicate the same production failure;
-5. preserve distinct material defects even when they occur in the same file or function.
+The second stage may admit, reject, or merge existing candidates, but it is not allowed to broadly search for unrelated new defects. Stage A and Stage B run in separate model contexts, and Stage B receives Stage A's JSON explicitly.
 
 ### Why
 
-The baseline already achieved recall 1.000. Adding more defect-finding breadth is not justified by the current evidence. The measured opportunity is to reduce reviewer noise while keeping every real defect.
+The baseline already achieved recall 1.000. Adding more defect-finding breadth was not justified by the evidence. The measured opportunity was to reduce reviewer noise while keeping every real defect.
 
 ### Success Criteria
 
-Iteration 1 is considered an improvement only if:
+Iteration 1 was considered an improvement only if:
 
-- precision is greater than 0.786;
-- recall remains 1.000;
-- F1 is greater than 0.880;
-- decision accuracy remains 1.000;
-- evidence-grounded finding rate remains 1.000.
+- precision was greater than 0.786;
+- recall remained 1.000;
+- F1 was greater than 0.880;
+- decision accuracy remained 1.000;
+- evidence-grounded finding rate remained 1.000.
 
-A perfect score is not assumed or required.
+A perfect score was not assumed or required.
 
-### Evidence
+### Diagnostic / Case 06
 
-| Metric | Before | After | Change |
+Before the frozen twelve-case run, the two-stage workflow was tested diagnostically on `case_06`, the only baseline case with false positives. Stage A reproduced four candidate findings. Stage B rejected the idempotency concern as out of scope and the non-positive-attempts concern as not material, while preserving two independently defensible retry-policy findings.
+
+This reduced the case from three false positives to one without suppressing the intended defect. The prompt was not further tuned against `case_06`; the workflow was then frozen and run across all twelve cases.
+
+### Twelve-Case Scored Result
+
+Observed aggregate metrics:
+
+| Metric | Baseline | Iteration 1 | Change |
 |---|---:|---:|---:|
-| F1 | 0.880 | TBD | TBD |
-| Precision | 0.786 | TBD | TBD |
-| Recall | 1.000 | TBD | TBD |
-| False-positive count | 3 | TBD | TBD |
-| Evidence-grounded findings | 1.000 | TBD | TBD |
-| Decision accuracy | 1.000 | TBD | TBD |
-| Runtime/case | TBD | TBD | TBD |
-| Cost/case | TBD | TBD | TBD |
+| True positives | 11 | 11 | 0 |
+| False positives | 3 | 1 | -2 |
+| False negatives | 0 | 0 | 0 |
+| Precision | 0.786 | 0.917 | +0.131 |
+| Recall | 1.000 | 1.000 | 0.000 |
+| F1 | 0.880 | 0.957 | +0.077 |
+| Decision accuracy | 1.000 | 1.000 | 0.000 |
+| Evidence-grounded finding rate | 1.000 | 1.000 | 0.000 |
+| Runtime/case | not captured | not captured | — |
+| Cost/case | not captured | not captured | — |
+
+Iteration 1 met every frozen success criterion. False positives fell from three to one, while all eleven expected defects remained detected and both clean controls remained correctly classified as ready.
+
+The remaining false positive is the second `retry_policy` finding in `case_06`: immediate retries with no delay, backoff, or jitter. The benchmark ground truth contains one retry-policy defect for the case, so the evaluator counts the second same-category finding as an extra finding. The reviewer preserved it because it was concrete, evidenced, in scope, and materially defensible. We did not suppress it merely to obtain a perfect benchmark score.
 
 ### Decision / Learning
 
-TBD after running the same twelve cases through the Iteration 1 workflow.
+**Keep the two-stage workflow.** The experiment supports the hypothesis that finding admission is a distinct engineering problem from finding generation.
+
+The measured improvement did not come from discovering more defects. It came from deciding which evidence-backed candidates deserved human attention. Precision improved from 78.6% to 91.7% while recall remained 100%.
+
+This also sharpens the project thesis: as coding agents become stronger at generating plausible findings, the next bottleneck is not simply evidence generation but **evidence admission and triage** — determining which supported findings are sufficiently scoped, material, and independent to interrupt a human reviewer.
+
+All twelve Stage A and Stage B trajectories are preserved under `evals/results/iteration_1_logs/`, alongside the structured candidate, admission, final, and scored artifacts.
 
 ---
 
@@ -225,40 +242,43 @@ Keep, revise, or remove the change. Explain why.
 
 ## Final
 
-**Status:** not reached
+**Status:** current best solution is Iteration 1; final packaging not yet complete
 
 ### Included Changes
 
-TBD.
+Current best measured system:
+
+- frozen canonical defect taxonomy;
+- bounded clean-control contracts;
+- candidate-generation stage;
+- independent admission critic and root-cause consolidator;
+- deterministic schema and semantic validation;
+- preserved agent trajectories and scored artifacts.
 
 ### Removed Experiments
 
-TBD.
+No scored component has been removed. Diagnostic fixture failures remain documented because they exposed benchmark defects and changed the evaluation design.
 
 ### Final Comparison
 
-| Metric | Baseline | Final | Change |
+| Metric | Baseline | Current Best | Change |
 |---|---:|---:|---:|
-| Production Defect Detection F1 | TBD | TBD | TBD |
-| Precision | TBD | TBD | TBD |
-| Recall | TBD | TBD | TBD |
-| False-positive rate | TBD | TBD | TBD |
-| Evidence-grounded findings | TBD | TBD | TBD |
-| Runtime/case | TBD | TBD | TBD |
-| Cost/case | TBD | TBD | TBD |
+| Production Defect Detection F1 | 0.880 | 0.957 | +0.077 |
+| Precision | 0.786 | 0.917 | +0.131 |
+| Recall | 1.000 | 1.000 | 0.000 |
+| Evidence-grounded findings | 1.000 | 1.000 | 0.000 |
+| Decision accuracy | 1.000 | 1.000 | 0.000 |
+| Runtime/case | not captured | not captured | — |
+| Cost/case | not captured | not captured | — |
 
 ### Main Failure Mode
 
-TBD.
+The remaining measured failure is duplicate or overlapping reporting within the same defect category when multiple production-relevant symptoms are independently defensible. The current evaluator matches expected categories exactly and consumes an expected category once, so a second same-category finding is counted as a false positive even when it is technically valid.
 
 ### Hot Take
 
-Working hypothesis, to be rewritten from actual evidence:
+> The bottleneck in AI-assisted software engineering is shifting from code generation to evidence generation — and once agents generate enough plausible evidence, evidence admission becomes its own engineering problem.
 
-> The bottleneck in AI-assisted software engineering is shifting from code generation to evidence generation.
+The experiment supports a more concrete version:
 
-A second evidence-backed refinement from the baseline is:
-
-> Once agents become good at finding plausible defects, deciding which findings deserve a human's attention becomes its own engineering problem.
-
-These should remain only if later experiments continue to support them.
+> Strong review agents do not only need to find defects. They need a disciplined mechanism for deciding which findings are worth a human's attention.
