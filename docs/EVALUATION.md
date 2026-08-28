@@ -59,31 +59,40 @@ Target: **12–15 fixed cases** if implementation time allows, with at least 10 
 
 The cases should be small enough to reproduce quickly but realistic enough to require engineering judgment.
 
-Candidate categories:
+The first three cases are now locked as the initial evaluation slice:
 
-| Case | Candidate defect | Expected evidence |
-|---|---|---|
-| 01 | missing transaction rollback | failing state-consistency test or code-path evidence |
-| 02 | race condition | concurrent execution test |
-| 03 | non-idempotent write endpoint | duplicate-request test |
-| 04 | N+1 query | query count or code-path evidence |
-| 05 | authorization boundary failure | access-control test |
-| 06 | unsafe retry policy | reproducible duplicate side effect |
-| 07 | swallowed exception | incorrect response/logging behavior |
-| 08 | pagination boundary error | deterministic boundary test |
-| 09 | timezone bug | fixed timestamp case |
-| 10 | state-transition inconsistency | invalid transition test |
-| 11 | valid implementation | no material defect expected |
-| 12 | multiple interacting defects | more difficult composite case |
+| Case | Purpose | Ground truth | Expected verification |
+|---|---|---|---|
+| 01 | transaction consistency | related writes can leave partial state | deterministic failure-injection test |
+| 02 | idempotency | retrying the same request can repeat a business side effect | duplicate-request test |
+| 03 | false-positive control | implementation is production-safe for the tested behavior | all invariant tests pass; no material defect expected |
 
-This table is a planning target, not final ground truth. Every case must have an unambiguous expected result before it enters the scored evaluation set.
+These three cases are intentionally complementary: two real defects plus one clean implementation. The clean case prevents an aggressive reviewer from appearing strong merely by reporting many speculative risks.
+
+Candidate categories for later expansion:
+
+| Candidate defect | Expected evidence |
+|---|---|
+| race condition | concurrent execution test |
+| N+1 query | query count or code-path evidence |
+| authorization boundary failure | access-control test |
+| unsafe retry policy | reproducible duplicate side effect |
+| swallowed exception | incorrect response/logging behavior |
+| pagination boundary error | deterministic boundary test |
+| timezone bug | fixed timestamp case |
+| state-transition inconsistency | invalid transition test |
+| multiple interacting defects | composite evidence from more than one invariant |
+
+Every case must have an unambiguous expected result before it enters the scored evaluation set.
+
+Detailed specifications for the locked cases live in `evals/CASES.md`. Machine-readable ground truth lives in `evals/ground_truth.yaml`.
 
 ## Ground-Truth Schema
 
-Each case should include machine-readable metadata similar to:
+Each case includes machine-readable metadata similar to:
 
 ```yaml
-case_id: case_03
+case_id: case_02
 title: duplicate payment request
 expected_status: defective
 defects:
@@ -105,7 +114,7 @@ Both baseline and advanced solution should emit the same normalized shape where 
 
 ```json
 {
-  "case_id": "case_03",
+  "case_id": "case_02",
   "decision": "not_ready",
   "findings": [
     {
@@ -166,9 +175,11 @@ The final evaluator should use deterministic matching where possible. If human m
 
 ## Challenging Case
 
-At least one case should be deliberately difficult and should teach us something about the system design.
+At least one later case should be deliberately difficult and should teach us something about the system design.
 
 A good candidate is a change that appears suspicious statically but is actually safe because of a constraint elsewhere in the repository. This tests whether the agent gathers enough context before raising a finding and exposes false-positive behavior.
+
+Case 03 is the first false-positive control, but the final dataset should contain at least one harder contextual version of this pattern.
 
 ## Experiment Decision Rule
 
