@@ -9,27 +9,32 @@ class PaymentValidationError(ValueError):
     pass
 
 
+class TransactionOwnershipError(RuntimeError):
+    pass
+
+
 def process_payment(
     conn: sqlite3.Connection,
     request_id: str,
     amount_cents: int,
 ) -> int:
-    """Create one charge per logical request and safely replay duplicates."""
-    if not request_id or not request_id.strip():
-        raise PaymentValidationError("request_id must be non-empty")
-    if amount_cents <= 0:
-        raise PaymentValidationError("amount_cents must be positive")
+    """Create one charge per logical request using a transaction owned here."""
+    if not isinstance(request_id, str) or not request_id.strip():
+        raise PaymentValidationError("request_id must be a non-empty string")
+    if (
+        not isinstance(amount_cents, int)
+        or isinstance(amount_cents, bool)
+        or amount_cents <= 0
+    ):
+        raise PaymentValidationError("amount_cents must be a positive integer")
+    if conn.in_transaction:
+        raise TransactionOwnershipError(
+            "process_payment requires a connection with no active transaction"
+        )
 
-    owns_transaction = not conn.in_transaction
-    savepoint = "payment_operation"
-
-    if owns_transaction:
-        # Serialize competing writers before the idempotency check so two
-        # concurrent requests cannot both observe a missing key.
-        conn.execute("BEGIN IMMEDIATE")
-    else:
-        # Preserve transaction ownership when called from a larger unit of work.
-        conn.execute(f"SAVEPOINT {savepoint}")
+    # Acquire the write reservation before the idempotency read so competing
+    # requests cannot both observe a missing key and then race to insert.
+    conn.execute("BEGIN IMMEDIATE")
 
     try:
         existing = conn.execute(
@@ -57,15 +62,8 @@ def process_payment(
                 (request_id, amount_cents, charge_id),
             )
 
-        if owns_transaction:
-            conn.commit()
-        else:
-            conn.execute(f"RELEASE SAVEPOINT {savepoint}")
+        conn.commit()
         return charge_id
     except Exception:
-        if owns_transaction:
-            conn.rollback()
-        else:
-            conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
-            conn.execute(f"RELEASE SAVEPOINT {savepoint}")
+        conn.rollback()
         raise
