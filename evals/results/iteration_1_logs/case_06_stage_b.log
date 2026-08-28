@@ -1,0 +1,911 @@
+OpenAI Codex v0.150.1
+--------
+workdir: /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a04994-96aa-7383-b474-f6bf9c040e68
+--------
+user
+Review the candidate findings for evals/cases/case_06.
+
+Use:
+- evals/results/iteration_1/case_06/candidates.json
+- prompts/finding_admission.md
+- schemas/review.schema.json
+- schemas/admission.schema.json
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+Write only the schema-valid admission report JSON to:
+
+evals/results/iteration_1/case_06/admission.json
+
+Do not modify the case files. Follow prompts/finding_admission.md exactly.
+
+codex
+I’ll review only the four permitted inputs, follow the admission prompt, validate the resulting JSON against the schema, and write the single requested output file.
+exec
+/usr/bin/zsh -lc "pwd && sed -n '1,240p' prompts/finding_admission.md && sed -n '1,260p' schemas/review.schema.json && sed -n '1,260p' schemas/admission.schema.json && sed -n '1,320p' evals/results/iteration_1/case_06/candidates.json" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+You are the finding-admission and root-cause-consolidation stage of a production-readiness review.
+
+You receive:
+- one backend evaluation case directory;
+- a candidate review produced by an earlier reviewer;
+- schemas/review.schema.json;
+- schemas/admission.schema.json.
+
+Your task is not to search broadly for new defects. Your task is to decide which candidate findings deserve human attention and how they should be consolidated.
+
+You may inspect the same case files and tests and run safe local commands or targeted probes to challenge or verify candidate evidence. Do not modify the case.
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+For every candidate finding, evaluate:
+1. Concrete failure: does it describe a specific failure mode rather than a generic recommendation?
+2. Evidence: is the claim directly supported by code, runtime behavior, an explicit contract, or a strongly implied invariant?
+3. Scope: does the failure apply to the supplied implementation and supported usage, rather than hypothetical callers or infrastructure?
+4. Materiality: would it plausibly affect production correctness, security, reliability, data integrity, or operational performance?
+5. Independence: is it a distinct root cause, or another symptom of a stronger candidate already representing the same defect?
+
+Admission rule:
+Admit a candidate only when it is concrete, supported, in scope, material, and independently useful to a human reviewer.
+
+Reject or demote candidates that are only generic hardening advice, hypothetical misuse, unsupported infrastructure assumptions, non-material API/style preferences, or unsupported speculation.
+
+Merge candidates when they share the same root cause and a single remediation would resolve the reported behaviors. Do not merge independent defects merely because they share a file, function, category, or severity.
+
+Important constraints:
+- Do not improve precision by suppressing a real material defect.
+- Do not introduce unrelated new findings that the candidate reviewer did not raise.
+- You may strengthen or clarify an admitted finding when the candidate evidence supports the same root cause.
+- Every input candidate must receive exactly one adjudication: admit, reject, or merge.
+- A merge must point to an admitted target candidate.
+- final_review must contain only admitted/consolidated findings.
+- final_review decision must be not_ready when at least one admitted finding remains, otherwise ready.
+- uncertainties alone must not force not_ready.
+
+Return only valid JSON matching schemas/admission.schema.json.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/admission.schema.json",
+  "title": "Finding Admission Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "adjudications", "merge_groups", "final_review"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "adjudications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_index",
+          "outcome",
+          "reason",
+          "evidence_summary",
+          "scope_assessment",
+          "materiality_assessment"
+        ],
+        "properties": {
+          "candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["admit", "reject", "merge"]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "supported_material_finding",
+              "unsupported",
+              "out_of_scope",
+              "not_material",
+              "hardening_only",
+              "duplicate_root_cause",
+              "other"
+            ]
+          },
+          "merge_into": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "evidence_summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope_assessment": {
+            "type": "string",
+            "minLength": 1
+          },
+          "materiality_assessment": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "outcome": {"const": "merge"}
+              }
+            },
+            "then": {
+              "required": ["merge_into"],
+              "properties": {
+                "reason": {"const": "duplicate_root_cause"},
+                "merge_into": {"type": "integer"}
+              }
+            },
+            "else": {
+              "properties": {
+                "merge_into": {"type": "null"}
+              }
+            }
+          }
+        ]
+      }
+    },
+    "merge_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target_candidate_index", "merged_candidate_indices", "root_cause"],
+        "properties": {
+          "target_candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "merged_candidate_indices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "root_cause": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "final_review": {
+      "$ref": "review.schema.json"
+    }
+  }
+}
+{
+  "case_id": "case_06",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "retry_policy",
+      "severity": "high",
+      "claim": "The helper retries every Exception, including deterministic and non-retryable failures, so an operation that has already performed side effects before raising a permanent error can be executed repeatedly.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py:7-11 catches the undifferentiated Exception base class and continues the loop without any retryability predicate or exception allowlist.",
+        "A runtime probe using an operation that always raises ValueError('invalid payload') showed that call_with_retry(..., attempts=3) invoked the operation three times before re-raising ValueError."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "retry_policy",
+      "severity": "high",
+      "claim": "Retries run immediately with no delay, backoff, or jitter, which can amplify load against a failing dependency and make concurrent callers retry in lockstep during an outage.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py:7-11 immediately begins the next loop iteration after an exception; there is no sleep, backoff calculation, jitter, or server-directed delay handling.",
+        "A runtime probe with three consecutive TimeoutError failures recorded only 2.515 and 1.332 microseconds between invocation timestamps, confirming that the attempts are issued as a hot loop."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "validation",
+      "severity": "medium",
+      "claim": "Non-positive attempts values are not validated and produce internal, optimization-dependent failures instead of a stable input error.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py:7 skips the operation when attempts is 0 or negative, leaving last_error as None; line 13 then relies on an assertion rather than validating the public argument.",
+        "Runtime probes with attempts=0 and attempts=-1 both raised an empty AssertionError without invoking the operation; under python -O, attempts=0 instead raised TypeError('exceptions must derive from BaseException') at line 14."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": [
+    "The case does not document which exception types are intended to be retryable or whether callers guarantee that operations are idempotent.",
+    "The case does not define an expected backoff schedule or maximum elapsed retry duration."
+  ]
+}
+
+exec
+/usr/bin/zsh -lc "find evals/cases/case_06 -maxdepth 4 -type f -print | sort && sed -n '1,220p' evals/cases/case_06/src/retry.py && find evals/cases/case_06 -maxdepth 4 -type f "'! -path '"'*/src/retry.py' -exec sh -c 'for f do echo \""'$f"; sed -n "1,240p" "$f"; done'"' sh {} +" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+evals/cases/case_06/src/__pycache__/retry.cpython-314.opt-1.pyc
+evals/cases/case_06/src/__pycache__/retry.cpython-314.pyc
+evals/cases/case_06/src/retry.py
+evals/cases/case_06/tests/__pycache__/test_retry.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_06/tests/test_retry.py
+from collections.abc import Callable
+
+
+def call_with_retry(operation: Callable[[], object], attempts: int = 3) -> object:
+    last_error: Exception | None = None
+
+    for _ in range(attempts):
+        try:
+            return operation()
+        except Exception as exc:
+            last_error = exc
+
+    assert last_error is not None
+    raise last_error
+evals/cases/case_06/tests/test_retry.py
+from evals.cases.case_06.src.retry import call_with_retry
+
+
+def test_transient_failure_can_recover() -> None:
+    calls = 0
+
+    def operation() -> str:
+        nonlocal calls
+        calls += 1
+        if calls < 2:
+            raise TimeoutError("temporary")
+        return "ok"
+
+    assert call_with_retry(operation) == "ok"
+    assert calls == 2
+evals/cases/case_06/tests/__pycache__/test_retry.cpython-314-pytest-8.4.2.pyc
++
+    E��j^  c                   �8   � ^ RI t^ RIHu Ht ^ RIHt R R ltR# )�    N)�call_with_retryc                �   � V ^8�  d   QhRR/# )�   �returnN� )�formats   "�l/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/cases/case_06/tests/test_retry.py�__annotate__r	      s   � � � �D� �    c                  �  a	� ^ o	R V	3R llp \        V 4      pRq!V8H  q3'       Eg   \        P                  ! RV3RW34      RR\        P                  ! 4       9   g!   \        P
+                  ! \         4      '       d   \        P                  ! \         4      MRRR\        P                  ! 4       9   g   \        P
+                  ! V 4      '       d   \        P                  ! V 4      MRR\        P                  ! V4      R	\        P                  ! V4      /,          pR
+RV/,          p\        \        P                  ! V4      4      hR;p;r2^pS	V8H  qf'       g�   \        P                  ! RV3RS	V34      RR
+\        P                  ! 4       9   g   \        P
+                  ! S	4      '       d   \        P                  ! S	4      MR
+R\        P                  ! V4      /,          pRRV/,          p\        \        P                  ! V4      4      hR;raR# )r   c                �$   � V ^8�  d   QhR\         /# )r   r   )�str)r   s   "r   r	   �8test_transient_failure_can_recover.<locals>.__annotate__   s   � � � �s� r
+   c                  �>   <� S ^,
+          o S ^8  d   \        R4      hR# )�   �	temporary�ok)�TimeoutError)�callss   �r   �	operation�5test_transient_failure_can_recover.<locals>.operation   s!   �� �
+��
+���1�9��{�+�+�r
+   r   �py0r   �py1r   �py3�py6zassert %(py8)s�py8Nr   zassert %(py5)s�py5)�==)z0%(py3)s
+{%(py3)s = %(py0)s(%(py1)s)
+} == %(py6)s)z%(py0)s == %(py3)s)	r   �
+@pytest_ar�_call_reprcompare�@py_builtins�locals�_should_repr_global_name�	_saferepr�AssertionError�_format_explanation)
+r   �@py_assert2�@py_assert5�@py_assert4�@py_format7�@py_format9�@py_assert1�@py_format4�@py_format6r   s
+            @r   �"test_transient_failure_can_recoverr.      s  �� �
+�E�� � �9�%�-��-��-�-�-�-�-�%�-�-�-�-�-�-�?�-�-�-�-�?�-�-�-�-�-�-�-�9�-�-�-�-�9�-�-�-�%�-�-�-��-�-�-�-�-�-�-�-���5�A�:�����5�A�������5�����5����A��������r
+   )	�builtinsr    �_pytest.assertion.rewrite�	assertion�rewriter   �evals.cases.case_06.src.retryr   r.   r   r
+   r   �<module>r4      s   ��  � � 9�r
+   evals/cases/case_06/src/__pycache__/retry.cpython-314.pyc
++
+    E��jc  �                   �"   � ^ RI Ht RR R lltR# )�    )�Callablec                �V   � V ^8�  d   QhR\         . \        3,          R\        R\        /# )�   �	operation�attempts�return)r   �object�int)�formats   "�e/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/cases/case_06/src/retry.py�__annotate__r
+      s*   � � 
+� 
+�x��F�
+�3� 
+�s� 
+�6� 
+�    c                 �   � R p\        V4       F  p V ! 4       u # 	  Vf   Q hVh  \         d   pTp R p?K*  R p?ii ; i)N)�range�	Exception)r   r   �
+last_error�_�excs   &&   r   �call_with_retryr      sM   � �#'�J�
+�8�_��	��;�� � �!�!�!�
+���	 � 	��J��	�s   �%�=�8�=N)�   )�collections.abcr   r   � r   r   �<module>r      s   �� $�
+� 
+r   evals/cases/case_06/src/__pycache__/retry.cpython-314.opt-1.pyc
++
+    E��jc  �                   �"   � ^ RI Ht RR R lltR# )�    )�Callablec                �V   � V ^8�  d   QhR\         . \        3,          R\        R\        /# )�   �	operation�attempts�return)r   �object�int)�formats   "�e/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/cases/case_06/src/retry.py�__annotate__r
+      s*   � � 
+� 
+�x��F�
+�3� 
+�s� 
+�6� 
+�    c                 �t   � R p\        V4       F  p V ! 4       u # 	  Vh  \         d   pTp R p?K$  R p?ii ; i)N)�range�	Exception)r   r   �
+last_error�_�excs   &&   r   �call_with_retryr      sA   � �#'�J�
+�8�_��	��;�� � ���	 � 	��J��	�s   ��7�2�7N)�   )�collections.abcr   r   � r   r   �<module>r      s   �� $�
+� 
+r   
+codex
+The first two candidates are distinct, code-supported retry-policy defects: exception classification and retry pacing require separate fixes. The non-positive-attempt behavior is real, but it is limited to malformed configuration and does not meet the prompt’s materiality threshold for the final production-readiness review.
+apply patch
+patch: completed
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_06/admission.json
+diff --git a/evals/results/iteration_1/case_06/admission.json b/evals/results/iteration_1/case_06/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..ee876c77c14be905bfaa626847607bd090c42d53
+--- /dev/null
++++ b/evals/results/iteration_1/case_06/admission.json
+@@ -0,0 +1,62 @@
++{
++  "case_id": "case_06",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "The implementation catches Exception around every invocation and retries without classifying the failure. The reported probe confirms that a deterministic ValueError is invoked once per configured attempt before being re-raised.",
++      "scope_assessment": "This behavior is intrinsic to the supplied retry helper for any operation that raises an Exception; it does not depend on an unsupported caller or infrastructure assumption.",
++      "materiality_assessment": "Retrying deterministic failures can repeat operation work or partial side effects and therefore poses a material correctness and reliability risk."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "After catching an exception, the loop immediately invokes the operation again. There is no delay, backoff, jitter, or retry-delay signal, and the reported timing probe confirms hot-loop retries.",
++      "scope_assessment": "Immediate retry is the supplied helper's unconditional behavior for failed attempts and applies directly to its normal transient-failure use case.",
++      "materiality_assessment": "During dependency degradation, immediate retries can amplify load and synchronize pressure from concurrent callers, creating a material reliability and operational-performance risk."
++    },
++    {
++      "candidate_index": 2,
++      "outcome": "reject",
++      "reason": "not_material",
++      "evidence_summary": "The implementation does produce AssertionError for non-positive attempts and an optimization-dependent TypeError when assertions are disabled, as claimed.",
++      "scope_assessment": "The behavior is reachable through the public integer parameter, but only when the caller supplies a non-positive retry count, which is not a meaningful retry operation and is outside the helper's demonstrated usage.",
++      "materiality_assessment": "The result is an immediate, visible caller error without operation execution or silent data corruption. Stable argument validation would improve the API, but the candidate does not establish a material production-readiness failure."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_06",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "The helper retries every Exception without distinguishing transient failures from deterministic or non-retryable failures, so failed operations can be executed repeatedly even when another attempt cannot succeed.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 catches the undifferentiated Exception base class and continues the retry loop without a retryability predicate or exception allowlist.",
++          "A runtime probe using an operation that always raises ValueError('invalid payload') showed that call_with_retry(..., attempts=3) invoked the operation three times before re-raising ValueError."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "Retries run immediately with no delay, backoff, or jitter, which can amplify load against a failing dependency and make concurrent callers retry in lockstep during an outage.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 immediately begins the next loop iteration after an exception; there is no sleep, backoff calculation, jitter, or server-directed delay handling.",
++          "A runtime probe with three consecutive TimeoutError failures recorded only 2.515 and 1.332 microseconds between invocation timestamps, confirming that the attempts are issued as a hot loop."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": [
++      "The case does not document which exception types are intended to be retryable or whether callers guarantee that operations are idempotent.",
++      "The case does not define an expected backoff schedule or maximum elapsed retry duration."
++    ]
++  }
++}
+
+diff --git a/evals/results/iteration_1/case_06/admission.json b/evals/results/iteration_1/case_06/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..ee876c77c14be905bfaa626847607bd090c42d53
+--- /dev/null
++++ b/evals/results/iteration_1/case_06/admission.json
+@@ -0,0 +1,62 @@
++{
++  "case_id": "case_06",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "The implementation catches Exception around every invocation and retries without classifying the failure. The reported probe confirms that a deterministic ValueError is invoked once per configured attempt before being re-raised.",
++      "scope_assessment": "This behavior is intrinsic to the supplied retry helper for any operation that raises an Exception; it does not depend on an unsupported caller or infrastructure assumption.",
++      "materiality_assessment": "Retrying deterministic failures can repeat operation work or partial side effects and therefore poses a material correctness and reliability risk."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "After catching an exception, the loop immediately invokes the operation again. There is no delay, backoff, jitter, or retry-delay signal, and the reported timing probe confirms hot-loop retries.",
++      "scope_assessment": "Immediate retry is the supplied helper's unconditional behavior for failed attempts and applies directly to its normal transient-failure use case.",
++      "materiality_assessment": "During dependency degradation, immediate retries can amplify load and synchronize pressure from concurrent callers, creating a material reliability and operational-performance risk."
++    },
++    {
++      "candidate_index": 2,
++      "outcome": "reject",
++      "reason": "not_material",
++      "evidence_summary": "The implementation does produce AssertionError for non-positive attempts and an optimization-dependent TypeError when assertions are disabled, as claimed.",
++      "scope_assessment": "The behavior is reachable through the public integer parameter, but only when the caller supplies a non-positive retry count, which is not a meaningful retry operation and is outside the helper's demonstrated usage.",
++      "materiality_assessment": "The result is an immediate, visible caller error without operation execution or silent data corruption. Stable argument validation would improve the API, but the candidate does not establish a material production-readiness failure."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_06",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "The helper retries every Exception without distinguishing transient failures from deterministic or non-retryable failures, so failed operations can be executed repeatedly even when another attempt cannot succeed.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 catches the undifferentiated Exception base class and continues the retry loop without a retryability predicate or exception allowlist.",
++          "A runtime probe using an operation that always raises ValueError('invalid payload') showed that call_with_retry(..., attempts=3) invoked the operation three times before re-raising ValueError."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "Retries run immediately with no delay, backoff, or jitter, which can amplify load against a failing dependency and make concurrent callers retry in lockstep during an outage.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 immediately begins the next loop iteration after an exception; there is no sleep, backoff calculation, jitter, or server-directed delay handling.",
++          "A runtime probe with three consecutive TimeoutError failures recorded only 2.515 and 1.332 microseconds between invocation timestamps, confirming that the attempts are issued as a hot loop."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": [
++      "The case does not document which exception types are intended to be retryable or whether callers guarantee that operations are idempotent.",
++      "The case does not define an expected backoff schedule or maximum elapsed retry duration."
++    ]
++  }
++}
+
+exec
+/usr/bin/zsh -lc "python - <<'PY'
+import json
+from pathlib import Path
+import jsonschema
+base = Path('.')
+with (base / 'schemas/admission.schema.json').open() as f:
+    schema = json.load(f)
+with (base / 'evals/results/iteration_1/case_06/admission.json').open() as f:
+    report = json.load(f)
+resolver = jsonschema.RefResolver(base_uri=(base / 'schemas').resolve().as_uri() + '/', referrer=schema)
+jsonschema.validate(report, schema, resolver=resolver)
+assert [a['candidate_index'] for a in report['adjudications']] == [0, 1, 2]
+print('schema-valid')
+PY
+git status --short -- evals/results/iteration_1/case_06/admission.json" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 101ms:
+<stdin>:9: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1118, in resolve_from_url
+    document = self.store[url]
+               ~~~~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_utils.py", line 20, in __getitem__
+    return self.store[self.normalize(uri)]
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'https://example.local/agentic-production-readiness/review.schema.json'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/urllib/request.py", line 1321, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1367, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1413, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1362, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1122, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1066, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/http/client.py", line 1501, in connect
+    super().connect()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/http/client.py", line 1032, in connect
+    self.sock = self._create_connection(
+                ~~~~~~~~~~~~~~~~~~~~~~~^
+        (self.host,self.port), self.timeout, self.source_address)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 846, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 983, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1121, in resolve_from_url
+    document = self.resolve_remote(url)
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1228, in resolve_remote
+    with urlopen(uri) as url:  # noqa: S310
+         ~~~~~~~^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/usr/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/usr/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/usr/lib/python3.14/urllib/request.py", line 1369, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno -3] Temporary failure in name resolution>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1330, in validate
+    error = exceptions.best_match(validator.iter_errors(instance))
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/exceptions.py", line 479, in best_match
+    best = max(errors, key=key, default=None)
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_keywords.py", line 296, in properties
+    yield from validator.descend(
+    ...<4 lines>...
+    )
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 431, in descend
+    for error in errors:
+                 ^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 477, in _validate_reference
+    scope, resolved = resolve(ref)
+                      ~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1107, in resolve
+    return url, self._remote_cache(url)
+                ~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1123, in resolve_from_url
+    raise exceptions._RefResolutionError(exc) from exc
+jsonschema.exceptions._RefResolutionError: <urlopen error [Errno -3] Temporary failure in name resolution>
+?? evals/results/iteration_1/case_06/admission.json
+
+diff --git a/evals/results/iteration_1/case_06/admission.json b/evals/results/iteration_1/case_06/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..ee876c77c14be905bfaa626847607bd090c42d53
+--- /dev/null
++++ b/evals/results/iteration_1/case_06/admission.json
+@@ -0,0 +1,62 @@
++{
++  "case_id": "case_06",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "The implementation catches Exception around every invocation and retries without classifying the failure. The reported probe confirms that a deterministic ValueError is invoked once per configured attempt before being re-raised.",
++      "scope_assessment": "This behavior is intrinsic to the supplied retry helper for any operation that raises an Exception; it does not depend on an unsupported caller or infrastructure assumption.",
++      "materiality_assessment": "Retrying deterministic failures can repeat operation work or partial side effects and therefore poses a material correctness and reliability risk."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "After catching an exception, the loop immediately invokes the operation again. There is no delay, backoff, jitter, or retry-delay signal, and the reported timing probe confirms hot-loop retries.",
++      "scope_assessment": "Immediate retry is the supplied helper's unconditional behavior for failed attempts and applies directly to its normal transient-failure use case.",
++      "materiality_assessment": "During dependency degradation, immediate retries can amplify load and synchronize pressure from concurrent callers, creating a material reliability and operational-performance risk."
++    },
++    {
++      "candidate_index": 2,
++      "outcome": "reject",
++      "reason": "not_material",
++      "evidence_summary": "The implementation does produce AssertionError for non-positive attempts and an optimization-dependent TypeError when assertions are disabled, as claimed.",
++      "scope_assessment": "The behavior is reachable through the public integer parameter, but only when the caller supplies a non-positive retry count, which is not a meaningful retry operation and is outside the helper's demonstrated usage.",
++      "materiality_assessment": "The result is an immediate, visible caller error without operation execution or silent data corruption. Stable argument validation would improve the API, but the candidate does not establish a material production-readiness failure."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_06",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "The helper retries every Exception without distinguishing transient failures from deterministic or non-retryable failures, so failed operations can be executed repeatedly even when another attempt cannot succeed.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 catches the undifferentiated Exception base class and continues the retry loop without a retryability predicate or exception allowlist.",
++          "A runtime probe using an operation that always raises ValueError('invalid payload') showed that call_with_retry(..., attempts=3) invoked the operation three times before re-raising ValueError."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "Retries run immediately with no delay, backoff, or jitter, which can amplify load against a failing dependency and make concurrent callers retry in lockstep during an outage.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 immediately begins the next loop iteration after an exception; there is no sleep, backoff calculation, jitter, or server-directed delay handling.",
++          "A runtime probe with three consecutive TimeoutError failures recorded only 2.515 and 1.332 microseconds between invocation timestamps, confirming that the attempts are issued as a hot loop."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": [
++      "The case does not document which exception types are intended to be retryable or whether callers guarantee that operations are idempotent.",
++      "The case does not define an expected backoff schedule or maximum elapsed retry duration."
++    ]
++  }
++}
+
+codex
+The first validation attempt hit the schemas’ canonical remote `$id` during reference resolution, not a report error. I’m rerunning validation with the local review schema explicitly registered.
+exec
+/usr/bin/zsh -lc "python - <<'PY'
+import json
+from pathlib import Path
+from referencing import Registry, Resource
+from jsonschema import Draft202012Validator
+base = Path('.')
+admission = json.loads((base / 'schemas/admission.schema.json').read_text())
+review = json.loads((base / 'schemas/review.schema.json').read_text())
+report = json.loads((base / 'evals/results/iteration_1/case_06/admission.json').read_text())
+registry = Registry().with_resource(review['"'$id'"'], Resource.from_contents(review))
+Draft202012Validator(admission, registry=registry).validate(report)
+assert [a['candidate_index'] for a in report['adjudications']] == list(range(3))
+print('schema-valid; all candidates adjudicated exactly once')
+PY" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 33ms:
+schema-valid; all candidates adjudicated exactly once
+
+diff --git a/evals/results/iteration_1/case_06/admission.json b/evals/results/iteration_1/case_06/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..ee876c77c14be905bfaa626847607bd090c42d53
+--- /dev/null
++++ b/evals/results/iteration_1/case_06/admission.json
+@@ -0,0 +1,62 @@
++{
++  "case_id": "case_06",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "The implementation catches Exception around every invocation and retries without classifying the failure. The reported probe confirms that a deterministic ValueError is invoked once per configured attempt before being re-raised.",
++      "scope_assessment": "This behavior is intrinsic to the supplied retry helper for any operation that raises an Exception; it does not depend on an unsupported caller or infrastructure assumption.",
++      "materiality_assessment": "Retrying deterministic failures can repeat operation work or partial side effects and therefore poses a material correctness and reliability risk."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "After catching an exception, the loop immediately invokes the operation again. There is no delay, backoff, jitter, or retry-delay signal, and the reported timing probe confirms hot-loop retries.",
++      "scope_assessment": "Immediate retry is the supplied helper's unconditional behavior for failed attempts and applies directly to its normal transient-failure use case.",
++      "materiality_assessment": "During dependency degradation, immediate retries can amplify load and synchronize pressure from concurrent callers, creating a material reliability and operational-performance risk."
++    },
++    {
++      "candidate_index": 2,
++      "outcome": "reject",
++      "reason": "not_material",
++      "evidence_summary": "The implementation does produce AssertionError for non-positive attempts and an optimization-dependent TypeError when assertions are disabled, as claimed.",
++      "scope_assessment": "The behavior is reachable through the public integer parameter, but only when the caller supplies a non-positive retry count, which is not a meaningful retry operation and is outside the helper's demonstrated usage.",
++      "materiality_assessment": "The result is an immediate, visible caller error without operation execution or silent data corruption. Stable argument validation would improve the API, but the candidate does not establish a material production-readiness failure."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_06",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "The helper retries every Exception without distinguishing transient failures from deterministic or non-retryable failures, so failed operations can be executed repeatedly even when another attempt cannot succeed.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 catches the undifferentiated Exception base class and continues the retry loop without a retryability predicate or exception allowlist.",
++          "A runtime probe using an operation that always raises ValueError('invalid payload') showed that call_with_retry(..., attempts=3) invoked the operation three times before re-raising ValueError."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "Retries run immediately with no delay, backoff, or jitter, which can amplify load against a failing dependency and make concurrent callers retry in lockstep during an outage.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 immediately begins the next loop iteration after an exception; there is no sleep, backoff calculation, jitter, or server-directed delay handling.",
++          "A runtime probe with three consecutive TimeoutError failures recorded only 2.515 and 1.332 microseconds between invocation timestamps, confirming that the attempts are issued as a hot loop."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": [
++      "The case does not document which exception types are intended to be retryable or whether callers guarantee that operations are idempotent.",
++      "The case does not define an expected backoff schedule or maximum elapsed retry duration."
++    ]
++  }
++}
+
+codex
+
+diff --git a/evals/results/iteration_1/case_06/admission.json b/evals/results/iteration_1/case_06/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..ee876c77c14be905bfaa626847607bd090c42d53
+--- /dev/null
++++ b/evals/results/iteration_1/case_06/admission.json
+@@ -0,0 +1,62 @@
++{
++  "case_id": "case_06",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "The implementation catches Exception around every invocation and retries without classifying the failure. The reported probe confirms that a deterministic ValueError is invoked once per configured attempt before being re-raised.",
++      "scope_assessment": "This behavior is intrinsic to the supplied retry helper for any operation that raises an Exception; it does not depend on an unsupported caller or infrastructure assumption.",
++      "materiality_assessment": "Retrying deterministic failures can repeat operation work or partial side effects and therefore poses a material correctness and reliability risk."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "After catching an exception, the loop immediately invokes the operation again. There is no delay, backoff, jitter, or retry-delay signal, and the reported timing probe confirms hot-loop retries.",
++      "scope_assessment": "Immediate retry is the supplied helper's unconditional behavior for failed attempts and applies directly to its normal transient-failure use case.",
++      "materiality_assessment": "During dependency degradation, immediate retries can amplify load and synchronize pressure from concurrent callers, creating a material reliability and operational-performance risk."
++    },
++    {
++      "candidate_index": 2,
++      "outcome": "reject",
++      "reason": "not_material",
++      "evidence_summary": "The implementation does produce AssertionError for non-positive attempts and an optimization-dependent TypeError when assertions are disabled, as claimed.",
++      "scope_assessment": "The behavior is reachable through the public integer parameter, but only when the caller supplies a non-positive retry count, which is not a meaningful retry operation and is outside the helper's demonstrated usage.",
++      "materiality_assessment": "The result is an immediate, visible caller error without operation execution or silent data corruption. Stable argument validation would improve the API, but the candidate does not establish a material production-readiness failure."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_06",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "The helper retries every Exception without distinguishing transient failures from deterministic or non-retryable failures, so failed operations can be executed repeatedly even when another attempt cannot succeed.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 catches the undifferentiated Exception base class and continues the retry loop without a retryability predicate or exception allowlist.",
++          "A runtime probe using an operation that always raises ValueError('invalid payload') showed that call_with_retry(..., attempts=3) invoked the operation three times before re-raising ValueError."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "retry_policy",
++        "severity": "high",
++        "claim": "Retries run immediately with no delay, backoff, or jitter, which can amplify load against a failing dependency and make concurrent callers retry in lockstep during an outage.",
++        "evidence": [
++          "evals/cases/case_06/src/retry.py:7-11 immediately begins the next loop iteration after an exception; there is no sleep, backoff calculation, jitter, or server-directed delay handling.",
++          "A runtime probe with three consecutive TimeoutError failures recorded only 2.515 and 1.332 microseconds between invocation timestamps, confirming that the attempts are issued as a hot loop."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": [
++      "The case does not document which exception types are intended to be retryable or whether callers guarantee that operations are idempotent.",
++      "The case does not define an expected backoff schedule or maximum elapsed retry duration."
++    ]
++  }
++}
+
+tokens used
+20,237
+

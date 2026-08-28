@@ -1,0 +1,420 @@
+OpenAI Codex v0.150.1
+--------
+workdir: /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a04988-ecf2-7ba0-9bf6-1d05ae85d26b
+--------
+user
+Review evals/cases/case_01 for production readiness.
+
+Use:
+- prompts/candidate_review.md
+- schemas/review.schema.json
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+Write only the schema-valid candidate review JSON to:
+
+evals/results/iteration_1/case_01/candidates.json
+
+Do not modify the case files. Follow prompts/candidate_review.md exactly.
+
+codex
+I’ll inspect the review instructions, schema, and only the files within `case_01`, then validate the generated JSON without touching the case inputs.
+exec
+/usr/bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g 'prompts/candidate_review.md' -g 'schemas/review.schema.json' -g 'evals/cases/case_01/**' -g '"'!evals/ground_truth.yaml'"' -g '"'!evals/verify_cases.py'"' -g '"'!evals/results/**'"'" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+prompts/candidate_review.md
+schemas/review.schema.json
+evals/cases/case_01/src/orders.py
+evals/cases/case_01/src/db.py
+evals/cases/case_01/src/__pycache__/orders.cpython-314.pyc
+evals/cases/case_01/src/__pycache__/db.cpython-314.pyc
+evals/cases/case_01/tests/test_happy_path.py
+evals/cases/case_01/tests/conftest.py
+evals/cases/case_01/tests/__pycache__/test_transaction_consistency.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_01/tests/__pycache__/test_happy_path.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_01/tests/__pycache__/test_transaction_consistency.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_01/tests/__pycache__/conftest.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_01/tests/__pycache__/test_happy_path.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_01/tests/__pycache__/conftest.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_01/tests/test_transaction_consistency.py
+
+exec
+/usr/bin/zsh -lc "sed -n '1,240p' prompts/candidate_review.md && sed -n '1,280p' schemas/review.schema.json && for f in evals/cases/case_01/src/orders.py evals/cases/case_01/src/db.py evals/cases/case_01/tests/conftest.py evals/cases/case_01/tests/test_happy_path.py evals/cases/case_01/tests/test_transaction_consistency.py; do echo \"FILE: "'$f"; nl -ba "$f"; done' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+You are the candidate-generation stage of a production-readiness review.
+
+Your task is to inspect one backend evaluation case and identify concrete material defects that may make it unsafe or unreliable in production.
+
+You may inspect files in the provided case directory and run safe local commands or tests scoped to that case. You may create temporary local verification probes when useful, but do not modify the case itself.
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- baseline or final benchmark scores
+
+Use only the canonical categories permitted by schemas/review.schema.json.
+
+For each candidate finding:
+- describe one concrete failure mode;
+- use the most specific permitted category;
+- explain the material production impact;
+- provide code or runtime evidence a human can verify;
+- set verified=true only when the behavior was directly confirmed through execution or equally concrete evidence;
+- use confidence from 0.0 to 1.0;
+- avoid style-only concerns and unsupported speculation.
+
+This is a candidate-generation stage, so prefer retaining a well-supported material concern rather than suppressing it merely because another stage may later consolidate or reject it.
+
+If you find no concrete material defect, return decision="ready" with an empty findings array.
+
+Return only valid JSON matching schemas/review.schema.json.
+
+Do not modify the reviewed case.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+FILE: evals/cases/case_01/src/orders.py
+     1	import sqlite3
+     2	
+     3	
+     4	def create_order(
+     5	    conn: sqlite3.Connection,
+     6	    customer: str,
+     7	    total_cents: int,
+     8	    *,
+     9	    fail_audit: bool = False,
+    10	) -> int:
+    11	    """Create an order and its audit record.
+    12	
+    13	    This fixture intentionally contains a production-readiness defect:
+    14	    the order is committed before the audit write, so a later failure
+    15	    can leave partial persisted state.
+    16	    """
+    17	    cursor = conn.execute(
+    18	        "INSERT INTO orders (customer, total_cents) VALUES (?, ?)",
+    19	        (customer, total_cents),
+    20	    )
+    21	    order_id = int(cursor.lastrowid)
+    22	
+    23	    # Defect: the first half of the business operation is made durable
+    24	    # before the second half succeeds.
+    25	    conn.commit()
+    26	
+    27	    if fail_audit:
+    28	        raise RuntimeError("simulated audit write failure")
+    29	
+    30	    conn.execute(
+    31	        "INSERT INTO audit_log (order_id, event) VALUES (?, ?)",
+    32	        (order_id, "order_created"),
+    33	    )
+    34	    conn.commit()
+    35	    return order_id
+FILE: evals/cases/case_01/src/db.py
+     1	import sqlite3
+     2	
+     3	
+     4	def connect() -> sqlite3.Connection:
+     5	    conn = sqlite3.connect(":memory:")
+     6	    conn.row_factory = sqlite3.Row
+     7	    conn.execute(
+     8	        """
+     9	        CREATE TABLE orders (
+    10	            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    11	            customer TEXT NOT NULL,
+    12	            total_cents INTEGER NOT NULL
+    13	        )
+    14	        """
+    15	    )
+    16	    conn.execute(
+    17	        """
+    18	        CREATE TABLE audit_log (
+    19	            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    20	            order_id INTEGER NOT NULL,
+    21	            event TEXT NOT NULL,
+    22	            FOREIGN KEY(order_id) REFERENCES orders(id)
+    23	        )
+    24	        """
+    25	    )
+    26	    return conn
+FILE: evals/cases/case_01/tests/conftest.py
+     1	from pathlib import Path
+     2	import sys
+     3	
+     4	CASE_ROOT = Path(__file__).resolve().parents[1]
+     5	sys.path.insert(0, str(CASE_ROOT))
+FILE: evals/cases/case_01/tests/test_happy_path.py
+     1	from evals.cases.case_01.src.db import connect
+     2	from evals.cases.case_01.src.orders import create_order
+     3	
+     4	
+     5	def test_order_and_audit_are_created_on_success() -> None:
+     6	    conn = connect()
+     7	
+     8	    order_id = create_order(conn, "alice", 2500)
+     9	
+    10	    order_count = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+    11	    audit_count = conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+    12	
+    13	    assert order_id == 1
+    14	    assert order_count == 1
+    15	    assert audit_count == 1
+FILE: evals/cases/case_01/tests/test_transaction_consistency.py
+     1	import pytest
+     2	
+     3	from evals.cases.case_01.src.db import connect
+     4	from evals.cases.case_01.src.orders import create_order
+     5	
+     6	
+     7	def test_failed_business_operation_leaves_no_partial_state() -> None:
+     8	    conn = connect()
+     9	
+    10	    with pytest.raises(RuntimeError, match="simulated audit write failure"):
+    11	        create_order(conn, "alice", 2500, fail_audit=True)
+    12	
+    13	    order_count = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+    14	    audit_count = conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+    15	
+    16	    # Production invariant: the business operation is atomic. This assertion
+    17	    # intentionally fails for the planted defect.
+    18	    assert order_count == 0
+    19	    assert audit_count == 0
+
+codex
+The case shows a single material atomicity risk: the order is committed before its audit record. I’m running the case-scoped tests to directly confirm the partial persisted state before writing the review.
+exec
+/usr/bin/zsh -lc 'pytest -q evals/cases/case_01' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ exited 1 in 196ms:
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+____________ test_failed_business_operation_leaves_no_partial_state ____________
+
+    def test_failed_business_operation_leaves_no_partial_state() -> None:
+        conn = connect()
+    
+        with pytest.raises(RuntimeError, match="simulated audit write failure"):
+            create_order(conn, "alice", 2500, fail_audit=True)
+    
+        order_count = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+        audit_count = conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+    
+        # Production invariant: the business operation is atomic. This assertion
+        # intentionally fails for the planted defect.
+>       assert order_count == 0
+E       assert 1 == 0
+
+evals/cases/case_01/tests/test_transaction_consistency.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED evals/cases/case_01/tests/test_transaction_consistency.py::test_failed_business_operation_leaves_no_partial_state
+1 failed, 1 passed in 0.03s
+
+exec
+/usr/bin/zsh -lc 'mkdir -p evals/results/iteration_1/case_01' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+apply patch
+patch: completed
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_01/candidates.json
+diff --git a/evals/results/iteration_1/case_01/candidates.json b/evals/results/iteration_1/case_01/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..aec599d5c4c0185e48eeb9ef9e8e6756efae0bb8
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/candidates.json
+@@ -0,0 +1,19 @@
++{
++  "case_id": "case_01",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "transaction_consistency",
++      "severity": "high",
++      "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++      "evidence": [
++        "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++        "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++        "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++      ],
++      "verified": true,
++      "confidence": 1.0
++    }
++  ],
++  "uncertainties": []
++}
+
+diff --git a/evals/results/iteration_1/case_01/candidates.json b/evals/results/iteration_1/case_01/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..aec599d5c4c0185e48eeb9ef9e8e6756efae0bb8
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/candidates.json
+@@ -0,0 +1,19 @@
++{
++  "case_id": "case_01",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "transaction_consistency",
++      "severity": "high",
++      "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++      "evidence": [
++        "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++        "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++        "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++      ],
++      "verified": true,
++      "confidence": 1.0
++    }
++  ],
++  "uncertainties": []
++}
+
+exec
+/usr/bin/zsh -lc 'jq empty evals/results/iteration_1/case_01/candidates.json && if command -v check-jsonschema >/dev/null 2>&1; then check-jsonschema --schemafile schemas/review.schema.json evals/results/iteration_1/case_01/candidates.json; else python -m jsonschema -i evals/results/iteration_1/case_01/candidates.json schemas/review.schema.json; fi' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 61ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/__main__.py:4: DeprecationWarning: The jsonschema CLI is deprecated and will be removed in a future version. Please use check-jsonschema instead, which can be installed from https://pypi.org/project/check-jsonschema/
+  from jsonschema.cli import main
+
+diff --git a/evals/results/iteration_1/case_01/candidates.json b/evals/results/iteration_1/case_01/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..aec599d5c4c0185e48eeb9ef9e8e6756efae0bb8
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/candidates.json
+@@ -0,0 +1,19 @@
++{
++  "case_id": "case_01",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "transaction_consistency",
++      "severity": "high",
++      "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++      "evidence": [
++        "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++        "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++        "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++      ],
++      "verified": true,
++      "confidence": 1.0
++    }
++  ],
++  "uncertainties": []
++}
+
+codex
+Written and schema-validated: [candidates.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_01/candidates.json).
+diff --git a/evals/results/iteration_1/case_01/candidates.json b/evals/results/iteration_1/case_01/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..aec599d5c4c0185e48eeb9ef9e8e6756efae0bb8
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/candidates.json
+@@ -0,0 +1,19 @@
++{
++  "case_id": "case_01",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "transaction_consistency",
++      "severity": "high",
++      "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++      "evidence": [
++        "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++        "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++        "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++      ],
++      "verified": true,
++      "confidence": 1.0
++    }
++  ],
++  "uncertainties": []
++}
+
+tokens used
+17,841
+Written and schema-validated: [candidates.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_01/candidates.json).

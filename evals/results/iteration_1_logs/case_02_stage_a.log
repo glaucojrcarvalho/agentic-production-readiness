@@ -1,0 +1,408 @@
+OpenAI Codex v0.150.1
+--------
+workdir: /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a0498c-f765-7fc0-9ad6-b79b831fe565
+--------
+user
+Review evals/cases/case_02 for production readiness.
+
+Use:
+- prompts/candidate_review.md
+- schemas/review.schema.json
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+Write only the schema-valid candidate review JSON to:
+
+evals/results/iteration_1/case_02/candidates.json
+
+Do not modify the case files. Follow prompts/candidate_review.md exactly.
+
+codex
+I’ll review only the permitted prompt, schema, and `case_02` materials, then validate the resulting JSON without touching the case files.
+exec
+/usr/bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g '"'!evals/ground_truth.yaml'"' -g '"'!evals/verify_cases.py'"' -g '"'!evals/results/**'"' -g '"'!outputs/**'"' | sort && printf '\\nCASE_FILES\\n' && rg --files evals/cases/case_02 | sort && printf '\\nPROMPT\\n' && sed -n '1,240p' prompts/candidate_review.md && printf '\\nSCHEMA\\n' && sed -n '1,280p' schemas/review.schema.json" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+
+CASE_FILES
+evals/cases/case_02/src/__pycache__/db.cpython-314.pyc
+evals/cases/case_02/src/__pycache__/payments.cpython-314.pyc
+evals/cases/case_02/src/db.py
+evals/cases/case_02/src/payments.py
+evals/cases/case_02/tests/__pycache__/conftest.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_02/tests/__pycache__/conftest.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_02/tests/__pycache__/test_idempotency.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_02/tests/__pycache__/test_idempotency.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_02/tests/__pycache__/test_single_request.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_02/tests/__pycache__/test_single_request.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_02/tests/conftest.py
+evals/cases/case_02/tests/test_idempotency.py
+evals/cases/case_02/tests/test_single_request.py
+
+PROMPT
+You are the candidate-generation stage of a production-readiness review.
+
+Your task is to inspect one backend evaluation case and identify concrete material defects that may make it unsafe or unreliable in production.
+
+You may inspect files in the provided case directory and run safe local commands or tests scoped to that case. You may create temporary local verification probes when useful, but do not modify the case itself.
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- baseline or final benchmark scores
+
+Use only the canonical categories permitted by schemas/review.schema.json.
+
+For each candidate finding:
+- describe one concrete failure mode;
+- use the most specific permitted category;
+- explain the material production impact;
+- provide code or runtime evidence a human can verify;
+- set verified=true only when the behavior was directly confirmed through execution or equally concrete evidence;
+- use confidence from 0.0 to 1.0;
+- avoid style-only concerns and unsupported speculation.
+
+This is a candidate-generation stage, so prefer retaining a well-supported material concern rather than suppressing it merely because another stage may later consolidate or reject it.
+
+If you find no concrete material defect, return decision="ready" with an empty findings array.
+
+Return only valid JSON matching schemas/review.schema.json.
+
+Do not modify the reviewed case.
+
+SCHEMA
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+
+exec
+/usr/bin/zsh -lc "for f in evals/cases/case_02/src/db.py evals/cases/case_02/src/payments.py evals/cases/case_02/tests/conftest.py evals/cases/case_02/tests/test_idempotency.py evals/cases/case_02/tests/test_single_request.py; do printf '\\nFILE %s\\n' \""'$f"; nl -ba "$f"; done' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+
+FILE evals/cases/case_02/src/db.py
+     1	import sqlite3
+     2	
+     3	
+     4	def connect() -> sqlite3.Connection:
+     5	    conn = sqlite3.connect(":memory:")
+     6	    conn.row_factory = sqlite3.Row
+     7	    conn.execute(
+     8	        """
+     9	        CREATE TABLE charges (
+    10	            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    11	            request_id TEXT NOT NULL,
+    12	            amount_cents INTEGER NOT NULL
+    13	        )
+    14	        """
+    15	    )
+    16	    return conn
+
+FILE evals/cases/case_02/src/payments.py
+     1	import sqlite3
+     2	
+     3	
+     4	def process_payment(
+     5	    conn: sqlite3.Connection,
+     6	    request_id: str,
+     7	    amount_cents: int,
+     8	) -> int:
+     9	    """Record a payment side effect for one request.
+    10	
+    11	    This fixture intentionally ignores prior use of request_id. Retrying the
+    12	    same logical request therefore creates another charge.
+    13	    """
+    14	    cursor = conn.execute(
+    15	        "INSERT INTO charges (request_id, amount_cents) VALUES (?, ?)",
+    16	        (request_id, amount_cents),
+    17	    )
+    18	    conn.commit()
+    19	    return int(cursor.lastrowid)
+
+FILE evals/cases/case_02/tests/conftest.py
+     1	from pathlib import Path
+     2	import sys
+     3	
+     4	CASE_ROOT = Path(__file__).resolve().parents[1]
+     5	sys.path.insert(0, str(CASE_ROOT))
+
+FILE evals/cases/case_02/tests/test_idempotency.py
+     1	from evals.cases.case_02.src.db import connect
+     2	from evals.cases.case_02.src.payments import process_payment
+     3	
+     4	
+     5	def test_retry_does_not_duplicate_business_side_effect() -> None:
+     6	    conn = connect()
+     7	
+     8	    first_charge_id = process_payment(conn, "req-123", 5000)
+     9	    retry_charge_id = process_payment(conn, "req-123", 5000)
+    10	
+    11	    count = conn.execute(
+    12	        "SELECT COUNT(*) FROM charges WHERE request_id = ?", ("req-123",)
+    13	    ).fetchone()[0]
+    14	
+    15	    # Production invariant: a retry of the same logical request must reuse the
+    16	    # original outcome rather than create a second side effect. These
+    17	    # assertions intentionally fail for the planted defect.
+    18	    assert count == 1
+    19	    assert retry_charge_id == first_charge_id
+
+FILE evals/cases/case_02/tests/test_single_request.py
+     1	from evals.cases.case_02.src.db import connect
+     2	from evals.cases.case_02.src.payments import process_payment
+     3	
+     4	
+     5	def test_single_request_creates_one_charge() -> None:
+     6	    conn = connect()
+     7	
+     8	    charge_id = process_payment(conn, "req-123", 5000)
+     9	
+    10	    count = conn.execute("SELECT COUNT(*) FROM charges").fetchone()[0]
+    11	    amount = conn.execute(
+    12	        "SELECT amount_cents FROM charges WHERE id = ?", (charge_id,)
+    13	    ).fetchone()[0]
+    14	
+    15	    assert count == 1
+    16	    assert amount == 5000
+
+codex
+The implementation and its tests point to a concrete retry-safety defect. I’m running the case-scoped tests now so the finding’s verification status is based on observed behavior.
+exec
+/usr/bin/zsh -lc 'pytest -q evals/cases/case_02' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ exited 1 in 229ms:
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+______________ test_retry_does_not_duplicate_business_side_effect ______________
+
+    def test_retry_does_not_duplicate_business_side_effect() -> None:
+        conn = connect()
+    
+        first_charge_id = process_payment(conn, "req-123", 5000)
+        retry_charge_id = process_payment(conn, "req-123", 5000)
+    
+        count = conn.execute(
+            "SELECT COUNT(*) FROM charges WHERE request_id = ?", ("req-123",)
+        ).fetchone()[0]
+    
+        # Production invariant: a retry of the same logical request must reuse the
+        # original outcome rather than create a second side effect. These
+        # assertions intentionally fail for the planted defect.
+>       assert count == 1
+E       assert 2 == 1
+
+evals/cases/case_02/tests/test_idempotency.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED evals/cases/case_02/tests/test_idempotency.py::test_retry_does_not_duplicate_business_side_effect
+1 failed, 1 passed in 0.03s
+
+exec
+/usr/bin/zsh -lc 'mkdir -p evals/results/iteration_1/case_02' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+apply patch
+patch: completed
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_02/candidates.json
+diff --git a/evals/results/iteration_1/case_02/candidates.json b/evals/results/iteration_1/case_02/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..d357779b20f3a4c19a416cb1484561e86e6362f2
+--- /dev/null
++++ b/evals/results/iteration_1/case_02/candidates.json
+@@ -0,0 +1,19 @@
++{
++  "case_id": "case_02",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "idempotency",
++      "severity": "high",
++      "claim": "Retrying the same payment request creates a second charge instead of returning the original charge outcome, allowing clients or infrastructure retries to duplicate a financial side effect.",
++      "evidence": [
++        "evals/cases/case_02/src/payments.py:14-18 unconditionally inserts and commits a new charges row on every process_payment call; it never checks for an existing request_id.",
++        "evals/cases/case_02/src/db.py:9-13 defines request_id as NOT NULL but does not enforce uniqueness, so the database permits multiple charges for the same logical request.",
++        "Running pytest -q evals/cases/case_02 produced one failure and one pass: two calls with request_id req-123 caused test_idempotency.py:18 to observe count == 2 rather than the required count == 1."
++      ],
++      "verified": true,
++      "confidence": 1.0
++    }
++  ],
++  "uncertainties": []
++}
+
+diff --git a/evals/results/iteration_1/case_02/candidates.json b/evals/results/iteration_1/case_02/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..d357779b20f3a4c19a416cb1484561e86e6362f2
+--- /dev/null
++++ b/evals/results/iteration_1/case_02/candidates.json
+@@ -0,0 +1,19 @@
++{
++  "case_id": "case_02",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "idempotency",
++      "severity": "high",
++      "claim": "Retrying the same payment request creates a second charge instead of returning the original charge outcome, allowing clients or infrastructure retries to duplicate a financial side effect.",
++      "evidence": [
++        "evals/cases/case_02/src/payments.py:14-18 unconditionally inserts and commits a new charges row on every process_payment call; it never checks for an existing request_id.",
++        "evals/cases/case_02/src/db.py:9-13 defines request_id as NOT NULL but does not enforce uniqueness, so the database permits multiple charges for the same logical request.",
++        "Running pytest -q evals/cases/case_02 produced one failure and one pass: two calls with request_id req-123 caused test_idempotency.py:18 to observe count == 2 rather than the required count == 1."
++      ],
++      "verified": true,
++      "confidence": 1.0
++    }
++  ],
++  "uncertainties": []
++}
+
+exec
+/usr/bin/zsh -lc "python -m json.tool evals/results/iteration_1/case_02/candidates.json >/dev/null && python -c 'import json; import jsonschema; schema=json.load(open(\"schemas/review.schema.json\")); candidate=json.load(open(\"evals/results/iteration_1/case_02/candidates.json\")); jsonschema.validate(candidate, schema); print(\"schema-valid\")' && git status --short -- evals/cases/case_02 evals/results/iteration_1/case_02/candidates.json" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 109ms:
+schema-valid
+?? evals/cases/case_02/src/__pycache__/
+?? evals/cases/case_02/tests/__pycache__/
+?? evals/results/iteration_1/case_02/candidates.json
+
+diff --git a/evals/results/iteration_1/case_02/candidates.json b/evals/results/iteration_1/case_02/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..d357779b20f3a4c19a416cb1484561e86e6362f2
+--- /dev/null
++++ b/evals/results/iteration_1/case_02/candidates.json
+@@ -0,0 +1,19 @@
++{
++  "case_id": "case_02",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "idempotency",
++      "severity": "high",
++      "claim": "Retrying the same payment request creates a second charge instead of returning the original charge outcome, allowing clients or infrastructure retries to duplicate a financial side effect.",
++      "evidence": [
++        "evals/cases/case_02/src/payments.py:14-18 unconditionally inserts and commits a new charges row on every process_payment call; it never checks for an existing request_id.",
++        "evals/cases/case_02/src/db.py:9-13 defines request_id as NOT NULL but does not enforce uniqueness, so the database permits multiple charges for the same logical request.",
++        "Running pytest -q evals/cases/case_02 produced one failure and one pass: two calls with request_id req-123 caused test_idempotency.py:18 to observe count == 2 rather than the required count == 1."
++      ],
++      "verified": true,
++      "confidence": 1.0
++    }
++  ],
++  "uncertainties": []
++}
+
+codex
+Created and schema-validated [candidates.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_02/candidates.json).
+diff --git a/evals/results/iteration_1/case_02/candidates.json b/evals/results/iteration_1/case_02/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..d357779b20f3a4c19a416cb1484561e86e6362f2
+--- /dev/null
++++ b/evals/results/iteration_1/case_02/candidates.json
+@@ -0,0 +1,19 @@
++{
++  "case_id": "case_02",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "idempotency",
++      "severity": "high",
++      "claim": "Retrying the same payment request creates a second charge instead of returning the original charge outcome, allowing clients or infrastructure retries to duplicate a financial side effect.",
++      "evidence": [
++        "evals/cases/case_02/src/payments.py:14-18 unconditionally inserts and commits a new charges row on every process_payment call; it never checks for an existing request_id.",
++        "evals/cases/case_02/src/db.py:9-13 defines request_id as NOT NULL but does not enforce uniqueness, so the database permits multiple charges for the same logical request.",
++        "Running pytest -q evals/cases/case_02 produced one failure and one pass: two calls with request_id req-123 caused test_idempotency.py:18 to observe count == 2 rather than the required count == 1."
++      ],
++      "verified": true,
++      "confidence": 1.0
++    }
++  ],
++  "uncertainties": []
++}
+
+tokens used
+16,738
+Created and schema-validated [candidates.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_02/candidates.json).

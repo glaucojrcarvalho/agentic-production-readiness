@@ -1,0 +1,933 @@
+OpenAI Codex v0.150.1
+--------
+workdir: /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a0499d-72af-7e53-9f0b-f747612722f8
+--------
+user
+Review the candidate findings for evals/cases/case_12.
+
+Use:
+- evals/results/iteration_1/case_12/candidates.json
+- prompts/finding_admission.md
+- schemas/review.schema.json
+- schemas/admission.schema.json
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+Write only the schema-valid admission report JSON to:
+
+evals/results/iteration_1/case_12/admission.json
+
+Do not modify the case files. Follow prompts/finding_admission.md exactly.
+
+codex
+I’ll review only the four permitted inputs, validate the report against the admission schema, and write just the requested JSON file.
+exec
+/usr/bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g '"'!evals/ground_truth.yaml'"' -g '"'!evals/verify_cases.py'"' -g '"'!evals/results/iteration_1/case_*/**'"' . | sed -n '1,40p'" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+
+exec
+/usr/bin/zsh -lc "sed -n '1,240p' prompts/finding_admission.md
+sed -n '1,260p' schemas/review.schema.json
+sed -n '1,260p' schemas/admission.schema.json
+sed -n '1,320p' evals/results/iteration_1/case_12/candidates.json" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+You are the finding-admission and root-cause-consolidation stage of a production-readiness review.
+
+You receive:
+- one backend evaluation case directory;
+- a candidate review produced by an earlier reviewer;
+- schemas/review.schema.json;
+- schemas/admission.schema.json.
+
+Your task is not to search broadly for new defects. Your task is to decide which candidate findings deserve human attention and how they should be consolidated.
+
+You may inspect the same case files and tests and run safe local commands or targeted probes to challenge or verify candidate evidence. Do not modify the case.
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+For every candidate finding, evaluate:
+1. Concrete failure: does it describe a specific failure mode rather than a generic recommendation?
+2. Evidence: is the claim directly supported by code, runtime behavior, an explicit contract, or a strongly implied invariant?
+3. Scope: does the failure apply to the supplied implementation and supported usage, rather than hypothetical callers or infrastructure?
+4. Materiality: would it plausibly affect production correctness, security, reliability, data integrity, or operational performance?
+5. Independence: is it a distinct root cause, or another symptom of a stronger candidate already representing the same defect?
+
+Admission rule:
+Admit a candidate only when it is concrete, supported, in scope, material, and independently useful to a human reviewer.
+
+Reject or demote candidates that are only generic hardening advice, hypothetical misuse, unsupported infrastructure assumptions, non-material API/style preferences, or unsupported speculation.
+
+Merge candidates when they share the same root cause and a single remediation would resolve the reported behaviors. Do not merge independent defects merely because they share a file, function, category, or severity.
+
+Important constraints:
+- Do not improve precision by suppressing a real material defect.
+- Do not introduce unrelated new findings that the candidate reviewer did not raise.
+- You may strengthen or clarify an admitted finding when the candidate evidence supports the same root cause.
+- Every input candidate must receive exactly one adjudication: admit, reject, or merge.
+- A merge must point to an admitted target candidate.
+- final_review must contain only admitted/consolidated findings.
+- final_review decision must be not_ready when at least one admitted finding remains, otherwise ready.
+- uncertainties alone must not force not_ready.
+
+Return only valid JSON matching schemas/admission.schema.json.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/admission.schema.json",
+  "title": "Finding Admission Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "adjudications", "merge_groups", "final_review"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "adjudications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_index",
+          "outcome",
+          "reason",
+          "evidence_summary",
+          "scope_assessment",
+          "materiality_assessment"
+        ],
+        "properties": {
+          "candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["admit", "reject", "merge"]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "supported_material_finding",
+              "unsupported",
+              "out_of_scope",
+              "not_material",
+              "hardening_only",
+              "duplicate_root_cause",
+              "other"
+            ]
+          },
+          "merge_into": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "evidence_summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope_assessment": {
+            "type": "string",
+            "minLength": 1
+          },
+          "materiality_assessment": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "outcome": {"const": "merge"}
+              }
+            },
+            "then": {
+              "required": ["merge_into"],
+              "properties": {
+                "reason": {"const": "duplicate_root_cause"},
+                "merge_into": {"type": "integer"}
+              }
+            },
+            "else": {
+              "properties": {
+                "merge_into": {"type": "null"}
+              }
+            }
+          }
+        ]
+      }
+    },
+    "merge_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target_candidate_index", "merged_candidate_indices", "root_cause"],
+        "properties": {
+          "target_candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "merged_candidate_indices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "root_cause": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "final_review": {
+      "$ref": "review.schema.json"
+    }
+  }
+}
+{
+  "case_id": "case_12",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "authorization",
+      "severity": "high",
+      "claim": "Credit issuance ignores actor_account_id and therefore permits a caller to issue credit to an arbitrary target account without any actor-to-target authorization check, enabling unauthorized balance creation.",
+      "evidence": [
+        "evals/cases/case_12/src/credits.py:16-26 accepts actor_account_id but never reads it; the function passes target_account_id directly to ledger.add after validating only that the amount is positive.",
+        "A scoped runtime probe called issue_credit with actor_account_id='attacker', target_account_id='victim', amount_cents=2500, and request_id='req-cross-account'; it succeeded and stored {'id': 1, 'account_id': 'victim', 'amount_cents': 2500, 'request_id': 'req-cross-account'}.",
+        "evals/cases/case_12/tests/test_credits.py:7-13 covers only the same-account path and does not exercise or reject cross-account issuance."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "idempotency",
+      "severity": "high",
+      "claim": "Repeated delivery of the same credit request creates a new ledger entry each time because request_id is recorded but never checked for prior processing, so ordinary retries can apply the credit more than once.",
+      "evidence": [
+        "evals/cases/case_12/src/credits.py:5-13 unconditionally creates and appends an entry; request_id is stored as data but is not used to detect a duplicate.",
+        "A scoped runtime probe invoked issue_credit twice with the identical actor, target, amount, and request_id='req-duplicate'; both calls succeeded and produced distinct entries with ids 2 and 3, each crediting 1000 cents to acct-a.",
+        "evals/cases/case_12/tests/test_credits.py contains only a single-call success test, so the existing passing test does not cover retry behavior."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    }
+  ],
+  "uncertainties": []
+}
+
+exec
+/usr/bin/zsh -lc "find evals/cases/case_12 -type f -maxdepth 4 -print | sort
+sed -n '1,240p' evals/cases/case_12/src/credits.py
+sed -n '1,240p' evals/cases/case_12/tests/test_credits.py" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+evals/cases/case_12/src/__pycache__/credits.cpython-314.pyc
+evals/cases/case_12/src/credits.py
+evals/cases/case_12/tests/__pycache__/test_credits.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_12/tests/test_credits.py
+class CreditLedger:
+    def __init__(self) -> None:
+        self.entries: list[dict] = []
+
+    def add(self, account_id: str, amount_cents: int, request_id: str) -> dict:
+        entry = {
+            "id": len(self.entries) + 1,
+            "account_id": account_id,
+            "amount_cents": amount_cents,
+            "request_id": request_id,
+        }
+        self.entries.append(entry)
+        return dict(entry)
+
+
+def issue_credit(
+    ledger: CreditLedger,
+    actor_account_id: str,
+    target_account_id: str,
+    amount_cents: int,
+    request_id: str,
+) -> dict:
+    if amount_cents <= 0:
+        raise ValueError("amount_cents must be positive")
+
+    return ledger.add(target_account_id, amount_cents, request_id)
+from evals.cases.case_12.src.credits import CreditLedger, issue_credit
+
+
+def test_account_can_receive_credit() -> None:
+    ledger = CreditLedger()
+
+    entry = issue_credit(
+        ledger,
+        actor_account_id="acct-a",
+        target_account_id="acct-a",
+        amount_cents=2500,
+        request_id="req-1",
+    )
+
+    assert entry["account_id"] == "acct-a"
+    assert entry["amount_cents"] == 2500
+
+codex
+Both candidates are directly supported by the implementation and represent separate root causes: missing actor/target authorization and missing request deduplication. I’m admitting each independently, with no merge.
+apply patch
+patch: completed
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_12/admission.json
+diff --git a/evals/results/iteration_1/case_12/admission.json b/evals/results/iteration_1/case_12/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..16780c7d53e334c1e771e21d2f0bf4993baaf2e7
+--- /dev/null
++++ b/evals/results/iteration_1/case_12/admission.json
+@@ -0,0 +1,53 @@
++{
++  "case_id": "case_12",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "issue_credit accepts actor_account_id but never uses it, validates only the amount, and passes target_account_id directly to the ledger. The candidate's cross-account probe demonstrates that an actor can credit a different account successfully, while the test covers only the same-account path.",
++      "scope_assessment": "The failure occurs in the supplied issue_credit API using its declared parameters and implementation; it does not depend on a hypothetical caller or external infrastructure.",
++      "materiality_assessment": "Allowing an unverified actor to create value for an arbitrary account is a material authorization and financial-integrity failure."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "CreditLedger.add always appends a new entry and merely records request_id without checking it. The candidate's repeated-request probe demonstrates that identical deliveries produce distinct ledger entries and duplicate the credit.",
++      "scope_assessment": "The failure is intrinsic to the supplied credit API and its request_id parameter, and is reproducible through ordinary repeated invocation without assumptions about external infrastructure.",
++      "materiality_assessment": "Duplicate processing of a credit request can create balances multiple times during retries, causing material financial and data-integrity harm."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_12",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "authorization",
++        "severity": "high",
++        "claim": "Credit issuance ignores actor_account_id and therefore permits a caller to issue credit to an arbitrary target account without any actor-to-target authorization check, enabling unauthorized balance creation.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:16-26 accepts actor_account_id but never reads it; the function passes target_account_id directly to ledger.add after validating only that the amount is positive.",
++          "A scoped runtime probe called issue_credit with actor_account_id='attacker', target_account_id='victim', amount_cents=2500, and request_id='req-cross-account'; it succeeded and stored {'id': 1, 'account_id': 'victim', 'amount_cents': 2500, 'request_id': 'req-cross-account'}.",
++          "evals/cases/case_12/tests/test_credits.py:7-13 covers only the same-account path and does not exercise or reject cross-account issuance."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "idempotency",
++        "severity": "high",
++        "claim": "Repeated delivery of the same credit request creates a new ledger entry each time because request_id is recorded but never checked for prior processing, so ordinary retries can apply the credit more than once.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:5-13 unconditionally creates and appends an entry; request_id is stored as data but is not used to detect a duplicate.",
++          "A scoped runtime probe invoked issue_credit twice with the identical actor, target, amount, and request_id='req-duplicate'; both calls succeeded and produced distinct entries with ids 2 and 3, each crediting 1000 cents to acct-a.",
++          "evals/cases/case_12/tests/test_credits.py contains only a single-call success test, so the existing passing test does not cover retry behavior."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+diff --git a/evals/results/iteration_1/case_12/admission.json b/evals/results/iteration_1/case_12/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..16780c7d53e334c1e771e21d2f0bf4993baaf2e7
+--- /dev/null
++++ b/evals/results/iteration_1/case_12/admission.json
+@@ -0,0 +1,53 @@
++{
++  "case_id": "case_12",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "issue_credit accepts actor_account_id but never uses it, validates only the amount, and passes target_account_id directly to the ledger. The candidate's cross-account probe demonstrates that an actor can credit a different account successfully, while the test covers only the same-account path.",
++      "scope_assessment": "The failure occurs in the supplied issue_credit API using its declared parameters and implementation; it does not depend on a hypothetical caller or external infrastructure.",
++      "materiality_assessment": "Allowing an unverified actor to create value for an arbitrary account is a material authorization and financial-integrity failure."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "CreditLedger.add always appends a new entry and merely records request_id without checking it. The candidate's repeated-request probe demonstrates that identical deliveries produce distinct ledger entries and duplicate the credit.",
++      "scope_assessment": "The failure is intrinsic to the supplied credit API and its request_id parameter, and is reproducible through ordinary repeated invocation without assumptions about external infrastructure.",
++      "materiality_assessment": "Duplicate processing of a credit request can create balances multiple times during retries, causing material financial and data-integrity harm."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_12",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "authorization",
++        "severity": "high",
++        "claim": "Credit issuance ignores actor_account_id and therefore permits a caller to issue credit to an arbitrary target account without any actor-to-target authorization check, enabling unauthorized balance creation.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:16-26 accepts actor_account_id but never reads it; the function passes target_account_id directly to ledger.add after validating only that the amount is positive.",
++          "A scoped runtime probe called issue_credit with actor_account_id='attacker', target_account_id='victim', amount_cents=2500, and request_id='req-cross-account'; it succeeded and stored {'id': 1, 'account_id': 'victim', 'amount_cents': 2500, 'request_id': 'req-cross-account'}.",
++          "evals/cases/case_12/tests/test_credits.py:7-13 covers only the same-account path and does not exercise or reject cross-account issuance."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "idempotency",
++        "severity": "high",
++        "claim": "Repeated delivery of the same credit request creates a new ledger entry each time because request_id is recorded but never checked for prior processing, so ordinary retries can apply the credit more than once.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:5-13 unconditionally creates and appends an entry; request_id is stored as data but is not used to detect a duplicate.",
++          "A scoped runtime probe invoked issue_credit twice with the identical actor, target, amount, and request_id='req-duplicate'; both calls succeeded and produced distinct entries with ids 2 and 3, each crediting 1000 cents to acct-a.",
++          "evals/cases/case_12/tests/test_credits.py contains only a single-call success test, so the existing passing test does not cover retry behavior."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+exec
+/usr/bin/zsh -lc "jq empty evals/results/iteration_1/case_12/admission.json && if command -v check-jsonschema >/dev/null 2>&1; then check-jsonschema --schemafile schemas/admission.schema.json evals/results/iteration_1/case_12/admission.json; elif command -v jsonschema >/dev/null 2>&1; then jsonschema -i evals/results/iteration_1/case_12/admission.json schemas/admission.schema.json; else echo 'JSON syntax valid; no schema validator CLI installed'; fi
+git status --short -- evals/results/iteration_1/case_12/admission.json evals/cases/case_12" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 102ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/bin/jsonschema:5: DeprecationWarning: The jsonschema CLI is deprecated and will be removed in a future version. Please use check-jsonschema instead, which can be installed from https://pypi.org/project/check-jsonschema/
+  from jsonschema.cli import main
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/urllib/request.py", line 1321, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1367, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1413, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1362, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1122, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1066, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/http/client.py", line 1501, in connect
+    super().connect()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/http/client.py", line 1032, in connect
+    self.sock = self._create_connection(
+                ~~~~~~~~~~~~~~~~~~~~~~~^
+        (self.host,self.port), self.timeout, self.source_address)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 846, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 983, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/referencing/_core.py", line 428, in get_or_retrieve
+    resource = registry._retrieve(uri)
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 112, in _warn_for_remote_retrieve
+    with urlopen(request) as response:  # noqa: S310
+         ~~~~~~~^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/usr/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/usr/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/usr/lib/python3.14/urllib/request.py", line 1369, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno -3] Temporary failure in name resolution>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/referencing/_core.py", line 682, in lookup
+    retrieved = self._registry.get_or_retrieve(uri)
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/referencing/_core.py", line 435, in get_or_retrieve
+    raise exceptions.Unretrievable(ref=uri) from error
+referencing.exceptions.Unretrievable: 'https://example.local/agentic-production-readiness/review.schema.json'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 462, in _validate_reference
+    resolved = self._resolver.lookup(ref)
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/referencing/_core.py", line 686, in lookup
+    raise exceptions.Unresolvable(ref=ref) from error
+referencing.exceptions.Unresolvable: review.schema.json
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/bin/jsonschema", line 8, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/cli.py", line 231, in main
+    sys.exit(run(arguments=parse_args(args=args)))
+             ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/cli.py", line 285, in run
+    exit_code |= _validate_instance(
+                 ~~~~~~~~~~~~~~~~~~^
+        instance_path=each,
+        ^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        outputter=outputter,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/cli.py", line 221, in _validate_instance
+    for error in validator.iter_errors(instance):
+                 ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_keywords.py", line 296, in properties
+    yield from validator.descend(
+    ...<4 lines>...
+    )
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 431, in descend
+    for error in errors:
+                 ^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 464, in _validate_reference
+    raise exceptions._WrappedReferencingError(err) from err
+jsonschema.exceptions._WrappedReferencingError: Unresolvable: review.schema.json
+?? evals/cases/case_12/src/__pycache__/
+?? evals/cases/case_12/tests/__pycache__/
+?? evals/results/iteration_1/case_12/admission.json
+
+diff --git a/evals/results/iteration_1/case_12/admission.json b/evals/results/iteration_1/case_12/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..16780c7d53e334c1e771e21d2f0bf4993baaf2e7
+--- /dev/null
++++ b/evals/results/iteration_1/case_12/admission.json
+@@ -0,0 +1,53 @@
++{
++  "case_id": "case_12",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "issue_credit accepts actor_account_id but never uses it, validates only the amount, and passes target_account_id directly to the ledger. The candidate's cross-account probe demonstrates that an actor can credit a different account successfully, while the test covers only the same-account path.",
++      "scope_assessment": "The failure occurs in the supplied issue_credit API using its declared parameters and implementation; it does not depend on a hypothetical caller or external infrastructure.",
++      "materiality_assessment": "Allowing an unverified actor to create value for an arbitrary account is a material authorization and financial-integrity failure."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "CreditLedger.add always appends a new entry and merely records request_id without checking it. The candidate's repeated-request probe demonstrates that identical deliveries produce distinct ledger entries and duplicate the credit.",
++      "scope_assessment": "The failure is intrinsic to the supplied credit API and its request_id parameter, and is reproducible through ordinary repeated invocation without assumptions about external infrastructure.",
++      "materiality_assessment": "Duplicate processing of a credit request can create balances multiple times during retries, causing material financial and data-integrity harm."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_12",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "authorization",
++        "severity": "high",
++        "claim": "Credit issuance ignores actor_account_id and therefore permits a caller to issue credit to an arbitrary target account without any actor-to-target authorization check, enabling unauthorized balance creation.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:16-26 accepts actor_account_id but never reads it; the function passes target_account_id directly to ledger.add after validating only that the amount is positive.",
++          "A scoped runtime probe called issue_credit with actor_account_id='attacker', target_account_id='victim', amount_cents=2500, and request_id='req-cross-account'; it succeeded and stored {'id': 1, 'account_id': 'victim', 'amount_cents': 2500, 'request_id': 'req-cross-account'}.",
++          "evals/cases/case_12/tests/test_credits.py:7-13 covers only the same-account path and does not exercise or reject cross-account issuance."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "idempotency",
++        "severity": "high",
++        "claim": "Repeated delivery of the same credit request creates a new ledger entry each time because request_id is recorded but never checked for prior processing, so ordinary retries can apply the credit more than once.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:5-13 unconditionally creates and appends an entry; request_id is stored as data but is not used to detect a duplicate.",
++          "A scoped runtime probe invoked issue_credit twice with the identical actor, target, amount, and request_id='req-duplicate'; both calls succeeded and produced distinct entries with ids 2 and 3, each crediting 1000 cents to acct-a.",
++          "evals/cases/case_12/tests/test_credits.py contains only a single-call success test, so the existing passing test does not cover retry behavior."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+exec
+/usr/bin/zsh -lc "jsonschema --help | sed -n '1,180p'" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 52ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/bin/jsonschema:5: DeprecationWarning: The jsonschema CLI is deprecated and will be removed in a future version. Please use check-jsonschema instead, which can be installed from https://pypi.org/project/check-jsonschema/
+  from jsonschema.cli import main
+usage: jsonschema [-h] [-i INSTANCES] [-F ERROR_FORMAT] [-o {plain,pretty}]
+                  [-V VALIDATOR] [--base-uri BASE_URI] [--version]
+                  schema
+
+JSON Schema Validation CLI
+
+positional arguments:
+  schema                the path to a JSON Schema to validate with (i.e.
+                        schema.json)
+
+options:
+  -h, --help            show this help message and exit
+  -i, --instance INSTANCES
+                        a path to a JSON instance (i.e. filename.json) to
+                        validate (may be specified multiple times). If no
+                        instances are provided via this option, one will be
+                        expected on standard input.
+  -F, --error-format ERROR_FORMAT
+                        the format to use for each validation error message,
+                        specified in a form suitable for str.format. This
+                        string will be passed one formatted object named
+                        'error' for each ValidationError. Only provide this
+                        option when using --output=plain, which is the
+                        default. If this argument is unprovided and
+                        --output=plain is used, a simple default
+                        representation will be used.
+  -o, --output {plain,pretty}
+                        an output format to use. 'plain' (default) will
+                        produce minimal text with one line for each error,
+                        while 'pretty' will produce more detailed human-
+                        readable output on multiple lines.
+  -V, --validator VALIDATOR
+                        the fully qualified object name of a validator to use,
+                        or, for validators that are registered with
+                        jsonschema, simply the name of the class.
+  --base-uri BASE_URI   a base URI to assign to the provided schema, even if
+                        it does not declare one (via e.g. $id). This option
+                        can be used if you wish to resolve relative references
+                        to a particular URI (or local path)
+  --version             show program's version number and exit
+
+diff --git a/evals/results/iteration_1/case_12/admission.json b/evals/results/iteration_1/case_12/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..16780c7d53e334c1e771e21d2f0bf4993baaf2e7
+--- /dev/null
++++ b/evals/results/iteration_1/case_12/admission.json
+@@ -0,0 +1,53 @@
++{
++  "case_id": "case_12",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "issue_credit accepts actor_account_id but never uses it, validates only the amount, and passes target_account_id directly to the ledger. The candidate's cross-account probe demonstrates that an actor can credit a different account successfully, while the test covers only the same-account path.",
++      "scope_assessment": "The failure occurs in the supplied issue_credit API using its declared parameters and implementation; it does not depend on a hypothetical caller or external infrastructure.",
++      "materiality_assessment": "Allowing an unverified actor to create value for an arbitrary account is a material authorization and financial-integrity failure."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "CreditLedger.add always appends a new entry and merely records request_id without checking it. The candidate's repeated-request probe demonstrates that identical deliveries produce distinct ledger entries and duplicate the credit.",
++      "scope_assessment": "The failure is intrinsic to the supplied credit API and its request_id parameter, and is reproducible through ordinary repeated invocation without assumptions about external infrastructure.",
++      "materiality_assessment": "Duplicate processing of a credit request can create balances multiple times during retries, causing material financial and data-integrity harm."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_12",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "authorization",
++        "severity": "high",
++        "claim": "Credit issuance ignores actor_account_id and therefore permits a caller to issue credit to an arbitrary target account without any actor-to-target authorization check, enabling unauthorized balance creation.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:16-26 accepts actor_account_id but never reads it; the function passes target_account_id directly to ledger.add after validating only that the amount is positive.",
++          "A scoped runtime probe called issue_credit with actor_account_id='attacker', target_account_id='victim', amount_cents=2500, and request_id='req-cross-account'; it succeeded and stored {'id': 1, 'account_id': 'victim', 'amount_cents': 2500, 'request_id': 'req-cross-account'}.",
++          "evals/cases/case_12/tests/test_credits.py:7-13 covers only the same-account path and does not exercise or reject cross-account issuance."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "idempotency",
++        "severity": "high",
++        "claim": "Repeated delivery of the same credit request creates a new ledger entry each time because request_id is recorded but never checked for prior processing, so ordinary retries can apply the credit more than once.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:5-13 unconditionally creates and appends an entry; request_id is stored as data but is not used to detect a duplicate.",
++          "A scoped runtime probe invoked issue_credit twice with the identical actor, target, amount, and request_id='req-duplicate'; both calls succeeded and produced distinct entries with ids 2 and 3, each crediting 1000 cents to acct-a.",
++          "evals/cases/case_12/tests/test_credits.py contains only a single-call success test, so the existing passing test does not cover retry behavior."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+exec
+/usr/bin/zsh -lc "python - <<'PY'
+import json
+from pathlib import Path
+from referencing import Registry, Resource
+from jsonschema import Draft202012Validator
+root = Path('.')
+admission_schema = json.loads((root / 'schemas/admission.schema.json').read_text())
+review_schema = json.loads((root / 'schemas/review.schema.json').read_text())
+instance = json.loads((root / 'evals/results/iteration_1/case_12/admission.json').read_text())
+registry = Registry().with_resource(review_schema['"'$id'"'], Resource.from_contents(review_schema))
+Draft202012Validator(admission_schema, registry=registry).validate(instance)
+print('Schema validation passed')
+PY" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 29ms:
+Schema validation passed
+
+diff --git a/evals/results/iteration_1/case_12/admission.json b/evals/results/iteration_1/case_12/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..16780c7d53e334c1e771e21d2f0bf4993baaf2e7
+--- /dev/null
++++ b/evals/results/iteration_1/case_12/admission.json
+@@ -0,0 +1,53 @@
++{
++  "case_id": "case_12",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "issue_credit accepts actor_account_id but never uses it, validates only the amount, and passes target_account_id directly to the ledger. The candidate's cross-account probe demonstrates that an actor can credit a different account successfully, while the test covers only the same-account path.",
++      "scope_assessment": "The failure occurs in the supplied issue_credit API using its declared parameters and implementation; it does not depend on a hypothetical caller or external infrastructure.",
++      "materiality_assessment": "Allowing an unverified actor to create value for an arbitrary account is a material authorization and financial-integrity failure."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "CreditLedger.add always appends a new entry and merely records request_id without checking it. The candidate's repeated-request probe demonstrates that identical deliveries produce distinct ledger entries and duplicate the credit.",
++      "scope_assessment": "The failure is intrinsic to the supplied credit API and its request_id parameter, and is reproducible through ordinary repeated invocation without assumptions about external infrastructure.",
++      "materiality_assessment": "Duplicate processing of a credit request can create balances multiple times during retries, causing material financial and data-integrity harm."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_12",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "authorization",
++        "severity": "high",
++        "claim": "Credit issuance ignores actor_account_id and therefore permits a caller to issue credit to an arbitrary target account without any actor-to-target authorization check, enabling unauthorized balance creation.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:16-26 accepts actor_account_id but never reads it; the function passes target_account_id directly to ledger.add after validating only that the amount is positive.",
++          "A scoped runtime probe called issue_credit with actor_account_id='attacker', target_account_id='victim', amount_cents=2500, and request_id='req-cross-account'; it succeeded and stored {'id': 1, 'account_id': 'victim', 'amount_cents': 2500, 'request_id': 'req-cross-account'}.",
++          "evals/cases/case_12/tests/test_credits.py:7-13 covers only the same-account path and does not exercise or reject cross-account issuance."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "idempotency",
++        "severity": "high",
++        "claim": "Repeated delivery of the same credit request creates a new ledger entry each time because request_id is recorded but never checked for prior processing, so ordinary retries can apply the credit more than once.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:5-13 unconditionally creates and appends an entry; request_id is stored as data but is not used to detect a duplicate.",
++          "A scoped runtime probe invoked issue_credit twice with the identical actor, target, amount, and request_id='req-duplicate'; both calls succeeded and produced distinct entries with ids 2 and 3, each crediting 1000 cents to acct-a.",
++          "evals/cases/case_12/tests/test_credits.py contains only a single-call success test, so the existing passing test does not cover retry behavior."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+codex
+Completed: [admission.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_12/admission.json). Schema validation passed.
+diff --git a/evals/results/iteration_1/case_12/admission.json b/evals/results/iteration_1/case_12/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..16780c7d53e334c1e771e21d2f0bf4993baaf2e7
+--- /dev/null
++++ b/evals/results/iteration_1/case_12/admission.json
+@@ -0,0 +1,53 @@
++{
++  "case_id": "case_12",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "issue_credit accepts actor_account_id but never uses it, validates only the amount, and passes target_account_id directly to the ledger. The candidate's cross-account probe demonstrates that an actor can credit a different account successfully, while the test covers only the same-account path.",
++      "scope_assessment": "The failure occurs in the supplied issue_credit API using its declared parameters and implementation; it does not depend on a hypothetical caller or external infrastructure.",
++      "materiality_assessment": "Allowing an unverified actor to create value for an arbitrary account is a material authorization and financial-integrity failure."
++    },
++    {
++      "candidate_index": 1,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "CreditLedger.add always appends a new entry and merely records request_id without checking it. The candidate's repeated-request probe demonstrates that identical deliveries produce distinct ledger entries and duplicate the credit.",
++      "scope_assessment": "The failure is intrinsic to the supplied credit API and its request_id parameter, and is reproducible through ordinary repeated invocation without assumptions about external infrastructure.",
++      "materiality_assessment": "Duplicate processing of a credit request can create balances multiple times during retries, causing material financial and data-integrity harm."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_12",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "authorization",
++        "severity": "high",
++        "claim": "Credit issuance ignores actor_account_id and therefore permits a caller to issue credit to an arbitrary target account without any actor-to-target authorization check, enabling unauthorized balance creation.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:16-26 accepts actor_account_id but never reads it; the function passes target_account_id directly to ledger.add after validating only that the amount is positive.",
++          "A scoped runtime probe called issue_credit with actor_account_id='attacker', target_account_id='victim', amount_cents=2500, and request_id='req-cross-account'; it succeeded and stored {'id': 1, 'account_id': 'victim', 'amount_cents': 2500, 'request_id': 'req-cross-account'}.",
++          "evals/cases/case_12/tests/test_credits.py:7-13 covers only the same-account path and does not exercise or reject cross-account issuance."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      },
++      {
++        "category": "idempotency",
++        "severity": "high",
++        "claim": "Repeated delivery of the same credit request creates a new ledger entry each time because request_id is recorded but never checked for prior processing, so ordinary retries can apply the credit more than once.",
++        "evidence": [
++          "evals/cases/case_12/src/credits.py:5-13 unconditionally creates and appends an entry; request_id is stored as data but is not used to detect a duplicate.",
++          "A scoped runtime probe invoked issue_credit twice with the identical actor, target, amount, and request_id='req-duplicate'; both calls succeeded and produced distinct entries with ids 2 and 3, each crediting 1000 cents to acct-a.",
++          "evals/cases/case_12/tests/test_credits.py contains only a single-call success test, so the existing passing test does not cover retry behavior."
++        ],
++        "verified": true,
++        "confidence": 0.99
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+tokens used
+25,892
+Completed: [admission.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_12/admission.json). Schema validation passed.

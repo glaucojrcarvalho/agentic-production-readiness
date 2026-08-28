@@ -1,0 +1,741 @@
+OpenAI Codex v0.150.1
+--------
+workdir: /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a0498c-122e-7c10-8f49-a7fef4de9a84
+--------
+user
+Review the candidate findings for evals/cases/case_01.
+
+Use:
+- evals/results/iteration_1/case_01/candidates.json
+- prompts/finding_admission.md
+- schemas/review.schema.json
+- schemas/admission.schema.json
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+Write only the schema-valid admission report JSON to:
+
+evals/results/iteration_1/case_01/admission.json
+
+Do not modify the case files. Follow prompts/finding_admission.md exactly.
+
+codex
+I’ll inspect only the four authorized inputs, apply the admission rubric exactly, then validate the resulting JSON against the admission schema.
+exec
+/usr/bin/zsh -lc "pwd && sed -n '1,240p' prompts/finding_admission.md && sed -n '1,260p' schemas/review.schema.json && sed -n '1,260p' schemas/admission.schema.json && sed -n '1,320p' evals/results/iteration_1/case_01/candidates.json" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+You are the finding-admission and root-cause-consolidation stage of a production-readiness review.
+
+You receive:
+- one backend evaluation case directory;
+- a candidate review produced by an earlier reviewer;
+- schemas/review.schema.json;
+- schemas/admission.schema.json.
+
+Your task is not to search broadly for new defects. Your task is to decide which candidate findings deserve human attention and how they should be consolidated.
+
+You may inspect the same case files and tests and run safe local commands or targeted probes to challenge or verify candidate evidence. Do not modify the case.
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+For every candidate finding, evaluate:
+1. Concrete failure: does it describe a specific failure mode rather than a generic recommendation?
+2. Evidence: is the claim directly supported by code, runtime behavior, an explicit contract, or a strongly implied invariant?
+3. Scope: does the failure apply to the supplied implementation and supported usage, rather than hypothetical callers or infrastructure?
+4. Materiality: would it plausibly affect production correctness, security, reliability, data integrity, or operational performance?
+5. Independence: is it a distinct root cause, or another symptom of a stronger candidate already representing the same defect?
+
+Admission rule:
+Admit a candidate only when it is concrete, supported, in scope, material, and independently useful to a human reviewer.
+
+Reject or demote candidates that are only generic hardening advice, hypothetical misuse, unsupported infrastructure assumptions, non-material API/style preferences, or unsupported speculation.
+
+Merge candidates when they share the same root cause and a single remediation would resolve the reported behaviors. Do not merge independent defects merely because they share a file, function, category, or severity.
+
+Important constraints:
+- Do not improve precision by suppressing a real material defect.
+- Do not introduce unrelated new findings that the candidate reviewer did not raise.
+- You may strengthen or clarify an admitted finding when the candidate evidence supports the same root cause.
+- Every input candidate must receive exactly one adjudication: admit, reject, or merge.
+- A merge must point to an admitted target candidate.
+- final_review must contain only admitted/consolidated findings.
+- final_review decision must be not_ready when at least one admitted finding remains, otherwise ready.
+- uncertainties alone must not force not_ready.
+
+Return only valid JSON matching schemas/admission.schema.json.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/admission.schema.json",
+  "title": "Finding Admission Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "adjudications", "merge_groups", "final_review"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "adjudications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_index",
+          "outcome",
+          "reason",
+          "evidence_summary",
+          "scope_assessment",
+          "materiality_assessment"
+        ],
+        "properties": {
+          "candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["admit", "reject", "merge"]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "supported_material_finding",
+              "unsupported",
+              "out_of_scope",
+              "not_material",
+              "hardening_only",
+              "duplicate_root_cause",
+              "other"
+            ]
+          },
+          "merge_into": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "evidence_summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope_assessment": {
+            "type": "string",
+            "minLength": 1
+          },
+          "materiality_assessment": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "outcome": {"const": "merge"}
+              }
+            },
+            "then": {
+              "required": ["merge_into"],
+              "properties": {
+                "reason": {"const": "duplicate_root_cause"},
+                "merge_into": {"type": "integer"}
+              }
+            },
+            "else": {
+              "properties": {
+                "merge_into": {"type": "null"}
+              }
+            }
+          }
+        ]
+      }
+    },
+    "merge_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target_candidate_index", "merged_candidate_indices", "root_cause"],
+        "properties": {
+          "target_candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "merged_candidate_indices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "root_cause": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "final_review": {
+      "$ref": "review.schema.json"
+    }
+  }
+}
+{
+  "case_id": "case_01",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "transaction_consistency",
+      "severity": "high",
+      "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
+      "evidence": [
+        "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
+        "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
+        "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}
+
+codex
+The candidate set contains one concrete atomicity finding. I’m checking its cited implementation/test evidence before admitting it, since the rubric requires support and scope rather than relying only on the reviewer’s conclusion.
+exec
+/usr/bin/zsh -lc "sed -n '1,180p' evals/cases/case_01/src/orders.py && rg -n \"failed_business|partial_state|create_order|audit\" evals/cases/case_01 -g '*.py'" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+import sqlite3
+
+
+def create_order(
+    conn: sqlite3.Connection,
+    customer: str,
+    total_cents: int,
+    *,
+    fail_audit: bool = False,
+) -> int:
+    """Create an order and its audit record.
+
+    This fixture intentionally contains a production-readiness defect:
+    the order is committed before the audit write, so a later failure
+    can leave partial persisted state.
+    """
+    cursor = conn.execute(
+        "INSERT INTO orders (customer, total_cents) VALUES (?, ?)",
+        (customer, total_cents),
+    )
+    order_id = int(cursor.lastrowid)
+
+    # Defect: the first half of the business operation is made durable
+    # before the second half succeeds.
+    conn.commit()
+
+    if fail_audit:
+        raise RuntimeError("simulated audit write failure")
+
+    conn.execute(
+        "INSERT INTO audit_log (order_id, event) VALUES (?, ?)",
+        (order_id, "order_created"),
+    )
+    conn.commit()
+    return order_id
+evals/cases/case_01/src/orders.py:4:def create_order(
+evals/cases/case_01/src/orders.py:9:    fail_audit: bool = False,
+evals/cases/case_01/src/orders.py:11:    """Create an order and its audit record.
+evals/cases/case_01/src/orders.py:14:    the order is committed before the audit write, so a later failure
+evals/cases/case_01/src/orders.py:27:    if fail_audit:
+evals/cases/case_01/src/orders.py:28:        raise RuntimeError("simulated audit write failure")
+evals/cases/case_01/src/orders.py:31:        "INSERT INTO audit_log (order_id, event) VALUES (?, ?)",
+evals/cases/case_01/src/db.py:18:        CREATE TABLE audit_log (
+evals/cases/case_01/tests/test_happy_path.py:2:from evals.cases.case_01.src.orders import create_order
+evals/cases/case_01/tests/test_happy_path.py:5:def test_order_and_audit_are_created_on_success() -> None:
+evals/cases/case_01/tests/test_happy_path.py:8:    order_id = create_order(conn, "alice", 2500)
+evals/cases/case_01/tests/test_happy_path.py:11:    audit_count = conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+evals/cases/case_01/tests/test_happy_path.py:15:    assert audit_count == 1
+evals/cases/case_01/tests/test_transaction_consistency.py:4:from evals.cases.case_01.src.orders import create_order
+evals/cases/case_01/tests/test_transaction_consistency.py:7:def test_failed_business_operation_leaves_no_partial_state() -> None:
+evals/cases/case_01/tests/test_transaction_consistency.py:10:    with pytest.raises(RuntimeError, match="simulated audit write failure"):
+evals/cases/case_01/tests/test_transaction_consistency.py:11:        create_order(conn, "alice", 2500, fail_audit=True)
+evals/cases/case_01/tests/test_transaction_consistency.py:14:    audit_count = conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+evals/cases/case_01/tests/test_transaction_consistency.py:19:    assert audit_count == 0
+
+exec
+/usr/bin/zsh -lc "sed -n '1,120p' evals/cases/case_01/tests/test_transaction_consistency.py && pytest -q evals/cases/case_01" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ exited 1 in 272ms:
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+____________ test_failed_business_operation_leaves_no_partial_state ____________
+
+    def test_failed_business_operation_leaves_no_partial_state() -> None:
+        conn = connect()
+    
+        with pytest.raises(RuntimeError, match="simulated audit write failure"):
+            create_order(conn, "alice", 2500, fail_audit=True)
+    
+        order_count = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+        audit_count = conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+    
+        # Production invariant: the business operation is atomic. This assertion
+        # intentionally fails for the planted defect.
+>       assert order_count == 0
+E       assert 1 == 0
+
+evals/cases/case_01/tests/test_transaction_consistency.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED evals/cases/case_01/tests/test_transaction_consistency.py::test_failed_business_operation_leaves_no_partial_state
+1 failed, 1 passed in 0.03s
+
+codex
+The cited failure reproduces: the order row remains committed (`order_count == 1`) after the simulated audit failure, while the test’s explicit invariant requires no partial state. I’m admitting the sole candidate as an independent high-severity transaction-consistency defect.
+apply patch
+patch: completed
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_01/admission.json
+diff --git a/evals/results/iteration_1/case_01/admission.json b/evals/results/iteration_1/case_01/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..34af3dc423b89182a466f22bdf90abdce7178880
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/admission.json
+@@ -0,0 +1,33 @@
++{
++  "case_id": "case_01",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "create_order commits the inserted order before attempting the audit write. With fail_audit=True, it then raises before inserting the audit record; the targeted case test reproduces the resulting partial state with order_count equal to 1 instead of the required 0.",
++      "scope_assessment": "The failure occurs in the supplied create_order implementation through its explicit fail_audit path and violates the atomicity invariant stated by the case test, so it applies directly to supported case behavior rather than a hypothetical caller or infrastructure condition.",
++      "materiality_assessment": "Persisting an order without its required audit record creates inconsistent durable business state and compromises data integrity, making the defect materially production-relevant."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_01",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "transaction_consistency",
++        "severity": "high",
++        "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++        "evidence": [
++          "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++          "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++          "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+diff --git a/evals/results/iteration_1/case_01/admission.json b/evals/results/iteration_1/case_01/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..34af3dc423b89182a466f22bdf90abdce7178880
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/admission.json
+@@ -0,0 +1,33 @@
++{
++  "case_id": "case_01",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "create_order commits the inserted order before attempting the audit write. With fail_audit=True, it then raises before inserting the audit record; the targeted case test reproduces the resulting partial state with order_count equal to 1 instead of the required 0.",
++      "scope_assessment": "The failure occurs in the supplied create_order implementation through its explicit fail_audit path and violates the atomicity invariant stated by the case test, so it applies directly to supported case behavior rather than a hypothetical caller or infrastructure condition.",
++      "materiality_assessment": "Persisting an order without its required audit record creates inconsistent durable business state and compromises data integrity, making the defect materially production-relevant."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_01",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "transaction_consistency",
++        "severity": "high",
++        "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++        "evidence": [
++          "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++          "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++          "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+exec
+/usr/bin/zsh -lc "jq empty evals/results/iteration_1/case_01/admission.json && python - <<'PY'
+import json
+from pathlib import Path
+from jsonschema import Draft202012Validator, RefResolver
+
+root = Path('.')
+schema_path = root / 'schemas' / 'admission.schema.json'
+instance_path = root / 'evals' / 'results' / 'iteration_1' / 'case_01' / 'admission.json'
+schema = json.loads(schema_path.read_text())
+instance = json.loads(instance_path.read_text())
+resolver = RefResolver(base_uri=schema_path.resolve().as_uri(), referrer=schema)
+Draft202012Validator(schema, resolver=resolver).validate(instance)
+print('schema-valid')
+PY" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ exited 1 in 93ms:
+<stdin>:3: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1118, in resolve_from_url
+    document = self.store[url]
+               ~~~~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_utils.py", line 20, in __getitem__
+    return self.store[self.normalize(uri)]
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'https://example.local/agentic-production-readiness/review.schema.json'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/urllib/request.py", line 1321, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1367, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1413, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1362, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1122, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1066, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/http/client.py", line 1501, in connect
+    super().connect()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/http/client.py", line 1032, in connect
+    self.sock = self._create_connection(
+                ~~~~~~~~~~~~~~~~~~~~~~~^
+        (self.host,self.port), self.timeout, self.source_address)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 846, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 983, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1121, in resolve_from_url
+    document = self.resolve_remote(url)
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1228, in resolve_remote
+    with urlopen(uri) as url:  # noqa: S310
+         ~~~~~~~^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/usr/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/usr/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/usr/lib/python3.14/urllib/request.py", line 1369, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno -3] Temporary failure in name resolution>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 11, in <module>
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 449, in validate
+    for error in self.iter_errors(*args, **kwargs):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_keywords.py", line 296, in properties
+    yield from validator.descend(
+    ...<4 lines>...
+    )
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 431, in descend
+    for error in errors:
+                 ^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 477, in _validate_reference
+    scope, resolved = resolve(ref)
+                      ~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1107, in resolve
+    return url, self._remote_cache(url)
+                ~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1123, in resolve_from_url
+    raise exceptions._RefResolutionError(exc) from exc
+jsonschema.exceptions._RefResolutionError: <urlopen error [Errno -3] Temporary failure in name resolution>
+
+diff --git a/evals/results/iteration_1/case_01/admission.json b/evals/results/iteration_1/case_01/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..34af3dc423b89182a466f22bdf90abdce7178880
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/admission.json
+@@ -0,0 +1,33 @@
++{
++  "case_id": "case_01",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "create_order commits the inserted order before attempting the audit write. With fail_audit=True, it then raises before inserting the audit record; the targeted case test reproduces the resulting partial state with order_count equal to 1 instead of the required 0.",
++      "scope_assessment": "The failure occurs in the supplied create_order implementation through its explicit fail_audit path and violates the atomicity invariant stated by the case test, so it applies directly to supported case behavior rather than a hypothetical caller or infrastructure condition.",
++      "materiality_assessment": "Persisting an order without its required audit record creates inconsistent durable business state and compromises data integrity, making the defect materially production-relevant."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_01",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "transaction_consistency",
++        "severity": "high",
++        "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++        "evidence": [
++          "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++          "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++          "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+codex
+The JSON syntax check passed. The first schema-validation command misresolved the local review-schema reference as its canonical HTTPS ID; I’m rerunning validation with that ID explicitly mapped to the supplied local schema.
+exec
+/usr/bin/zsh -lc "python - <<'PY'
+import json
+from pathlib import Path
+from jsonschema import Draft202012Validator, RefResolver
+
+schemas = Path('schemas')
+admission = json.loads((schemas / 'admission.schema.json').read_text())
+review = json.loads((schemas / 'review.schema.json').read_text())
+instance = json.loads(Path('evals/results/iteration_1/case_01/admission.json').read_text())
+store = {
+    review['"'$id'"']: review,
+    (schemas / 'review.schema.json').resolve().as_uri(): review,
+}
+resolver = RefResolver.from_schema(admission, store=store)
+Draft202012Validator(admission, resolver=resolver).validate(instance)
+print('schema-valid')
+PY" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 49ms:
+<stdin>:3: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+schema-valid
+
+diff --git a/evals/results/iteration_1/case_01/admission.json b/evals/results/iteration_1/case_01/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..34af3dc423b89182a466f22bdf90abdce7178880
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/admission.json
+@@ -0,0 +1,33 @@
++{
++  "case_id": "case_01",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "create_order commits the inserted order before attempting the audit write. With fail_audit=True, it then raises before inserting the audit record; the targeted case test reproduces the resulting partial state with order_count equal to 1 instead of the required 0.",
++      "scope_assessment": "The failure occurs in the supplied create_order implementation through its explicit fail_audit path and violates the atomicity invariant stated by the case test, so it applies directly to supported case behavior rather than a hypothetical caller or infrastructure condition.",
++      "materiality_assessment": "Persisting an order without its required audit record creates inconsistent durable business state and compromises data integrity, making the defect materially production-relevant."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_01",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "transaction_consistency",
++        "severity": "high",
++        "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++        "evidence": [
++          "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++          "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++          "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+codex
+Created and schema-validated [admission.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_01/admission.json).
+diff --git a/evals/results/iteration_1/case_01/admission.json b/evals/results/iteration_1/case_01/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..34af3dc423b89182a466f22bdf90abdce7178880
+--- /dev/null
++++ b/evals/results/iteration_1/case_01/admission.json
+@@ -0,0 +1,33 @@
++{
++  "case_id": "case_01",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "evidence_summary": "create_order commits the inserted order before attempting the audit write. With fail_audit=True, it then raises before inserting the audit record; the targeted case test reproduces the resulting partial state with order_count equal to 1 instead of the required 0.",
++      "scope_assessment": "The failure occurs in the supplied create_order implementation through its explicit fail_audit path and violates the atomicity invariant stated by the case test, so it applies directly to supported case behavior rather than a hypothetical caller or infrastructure condition.",
++      "materiality_assessment": "Persisting an order without its required audit record creates inconsistent durable business state and compromises data integrity, making the defect materially production-relevant."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_01",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "transaction_consistency",
++        "severity": "high",
++        "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
++        "evidence": [
++          "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
++          "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
++          "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+tokens used
+18,718
+Created and schema-validated [admission.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_01/admission.json).

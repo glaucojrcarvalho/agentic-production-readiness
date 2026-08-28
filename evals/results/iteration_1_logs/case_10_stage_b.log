@@ -1,0 +1,708 @@
+OpenAI Codex v0.150.1
+--------
+workdir: /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a0499a-be78-72a1-b8eb-1531cf2b1f3c
+--------
+user
+Review the candidate findings for evals/cases/case_10.
+
+Use:
+- evals/results/iteration_1/case_10/candidates.json
+- prompts/finding_admission.md
+- schemas/review.schema.json
+- schemas/admission.schema.json
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+Write only the schema-valid admission report JSON to:
+
+evals/results/iteration_1/case_10/admission.json
+
+Do not modify the case files. Follow prompts/finding_admission.md exactly.
+
+codex
+I’ll inspect only the four permitted inputs, apply the admission rubric exactly, validate the result against the schema, and write only the requested JSON file.
+exec
+/usr/bin/zsh -lc "pwd && sed -n '1,240p' prompts/finding_admission.md && sed -n '1,260p' schemas/review.schema.json && sed -n '1,260p' schemas/admission.schema.json && sed -n '1,320p' evals/results/iteration_1/case_10/candidates.json" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+You are the finding-admission and root-cause-consolidation stage of a production-readiness review.
+
+You receive:
+- one backend evaluation case directory;
+- a candidate review produced by an earlier reviewer;
+- schemas/review.schema.json;
+- schemas/admission.schema.json.
+
+Your task is not to search broadly for new defects. Your task is to decide which candidate findings deserve human attention and how they should be consolidated.
+
+You may inspect the same case files and tests and run safe local commands or targeted probes to challenge or verify candidate evidence. Do not modify the case.
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+For every candidate finding, evaluate:
+1. Concrete failure: does it describe a specific failure mode rather than a generic recommendation?
+2. Evidence: is the claim directly supported by code, runtime behavior, an explicit contract, or a strongly implied invariant?
+3. Scope: does the failure apply to the supplied implementation and supported usage, rather than hypothetical callers or infrastructure?
+4. Materiality: would it plausibly affect production correctness, security, reliability, data integrity, or operational performance?
+5. Independence: is it a distinct root cause, or another symptom of a stronger candidate already representing the same defect?
+
+Admission rule:
+Admit a candidate only when it is concrete, supported, in scope, material, and independently useful to a human reviewer.
+
+Reject or demote candidates that are only generic hardening advice, hypothetical misuse, unsupported infrastructure assumptions, non-material API/style preferences, or unsupported speculation.
+
+Merge candidates when they share the same root cause and a single remediation would resolve the reported behaviors. Do not merge independent defects merely because they share a file, function, category, or severity.
+
+Important constraints:
+- Do not improve precision by suppressing a real material defect.
+- Do not introduce unrelated new findings that the candidate reviewer did not raise.
+- You may strengthen or clarify an admitted finding when the candidate evidence supports the same root cause.
+- Every input candidate must receive exactly one adjudication: admit, reject, or merge.
+- A merge must point to an admitted target candidate.
+- final_review must contain only admitted/consolidated findings.
+- final_review decision must be not_ready when at least one admitted finding remains, otherwise ready.
+- uncertainties alone must not force not_ready.
+
+Return only valid JSON matching schemas/admission.schema.json.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/admission.schema.json",
+  "title": "Finding Admission Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "adjudications", "merge_groups", "final_review"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "adjudications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_index",
+          "outcome",
+          "reason",
+          "evidence_summary",
+          "scope_assessment",
+          "materiality_assessment"
+        ],
+        "properties": {
+          "candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["admit", "reject", "merge"]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "supported_material_finding",
+              "unsupported",
+              "out_of_scope",
+              "not_material",
+              "hardening_only",
+              "duplicate_root_cause",
+              "other"
+            ]
+          },
+          "merge_into": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "evidence_summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope_assessment": {
+            "type": "string",
+            "minLength": 1
+          },
+          "materiality_assessment": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "outcome": {"const": "merge"}
+              }
+            },
+            "then": {
+              "required": ["merge_into"],
+              "properties": {
+                "reason": {"const": "duplicate_root_cause"},
+                "merge_into": {"type": "integer"}
+              }
+            },
+            "else": {
+              "properties": {
+                "merge_into": {"type": "null"}
+              }
+            }
+          }
+        ]
+      }
+    },
+    "merge_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target_candidate_index", "merged_candidate_indices", "root_cause"],
+        "properties": {
+          "target_candidate_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "merged_candidate_indices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "root_cause": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "final_review": {
+      "$ref": "review.schema.json"
+    }
+  }
+}
+{
+  "case_id": "case_10",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "time_handling",
+      "severity": "high",
+      "claim": "Token expiration is evaluated using local wall-clock fields instead of absolute instants, so callers using different timezone offsets can accept already-expired tokens or reject still-valid tokens.",
+      "evidence": [
+        "evals/cases/case_10/src/tokens.py removes timezone information from both inputs with replace(tzinfo=None) before comparing them, which discards each input's UTC offset.",
+        "A runtime probe with expires_at=2026-08-28T13:00:00+02:00 (11:00 UTC) and now=2026-08-28T12:00:00+00:00 produced False even though now >= expires_at is True, directly confirming that an expired token can be treated as valid.",
+        "A runtime probe with expires_at=2026-08-28T12:00:00+00:00 and now=2026-08-28T13:00:00+02:00 (11:00 UTC) produced True even though now >= expires_at is False, directly confirming premature expiration."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}
+
+codex
+There is one candidate. I’m checking the cited implementation and reproducing the offset-sensitive behavior so the adjudication rests on direct case evidence rather than the candidate’s assertion alone.
+exec
+/usr/bin/zsh -lc "rg --files evals/cases/case_10 && sed -n '1,240p' evals/cases/case_10/src/tokens.py && rg -n \"is_expired|expires_at|timezone|tzinfo\" evals/cases/case_10" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+evals/cases/case_10/src/__pycache__/tokens.cpython-314.pyc
+evals/cases/case_10/src/tokens.py
+evals/cases/case_10/tests/test_tokens.py
+evals/cases/case_10/tests/__pycache__/test_tokens.cpython-314-pytest-8.4.2.pyc
+from datetime import datetime
+
+
+def is_token_expired(expires_at: datetime, now: datetime) -> bool:
+    # Compare wall-clock fields so callers can supply datetimes from different zones.
+    expires_wall = expires_at.replace(tzinfo=None)
+    now_wall = now.replace(tzinfo=None)
+    return now_wall >= expires_wall
+evals/cases/case_10/src/tokens.py:4:def is_token_expired(expires_at: datetime, now: datetime) -> bool:
+evals/cases/case_10/src/tokens.py:6:    expires_wall = expires_at.replace(tzinfo=None)
+evals/cases/case_10/src/tokens.py:7:    now_wall = now.replace(tzinfo=None)
+evals/cases/case_10/tests/test_tokens.py:1:from datetime import datetime, timezone
+evals/cases/case_10/tests/test_tokens.py:6:def test_expiration_in_same_timezone() -> None:
+evals/cases/case_10/tests/test_tokens.py:7:    now = datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
+evals/cases/case_10/tests/test_tokens.py:8:    expires = datetime(2026, 8, 28, 12, 5, tzinfo=timezone.utc)
+
+exec
+/usr/bin/zsh -lc "sed -n '1,200p' evals/cases/case_10/tests/test_tokens.py && PYTHONPATH=evals/cases/case_10/src python - <<'PY'
+from datetime import datetime
+from tokens import is_token_expired
+cases = [
+    (datetime.fromisoformat('2026-08-28T13:00:00+02:00'), datetime.fromisoformat('2026-08-28T12:00:00+00:00')),
+    (datetime.fromisoformat('2026-08-28T12:00:00+00:00'), datetime.fromisoformat('2026-08-28T13:00:00+02:00')),
+]
+for expires_at, now in cases:
+    print(is_token_expired(expires_at, now), now >= expires_at)
+PY" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+from datetime import datetime, timezone
+
+from evals.cases.case_10.src.tokens import is_token_expired
+
+
+def test_expiration_in_same_timezone() -> None:
+    now = datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
+    expires = datetime(2026, 8, 28, 12, 5, tzinfo=timezone.utc)
+
+    assert is_token_expired(expires, now) is False
+False True
+True False
+
+codex
+The candidate is directly verified: stripping `tzinfo` reverses the correct instant-based result in both directions. It is in scope because the function explicitly accepts timezone-aware `datetime` values, and it is material because it changes authorization-by-expiry behavior. I’m admitting it as the sole independent finding.
+apply patch
+patch: completed
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_10/admission.json
+diff --git a/evals/results/iteration_1/case_10/admission.json b/evals/results/iteration_1/case_10/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..19577dba871f73bca3fb431d0c928e087c5b98f9
+--- /dev/null
++++ b/evals/results/iteration_1/case_10/admission.json
+@@ -0,0 +1,34 @@
++{
++  "case_id": "case_10",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "merge_into": null,
++      "evidence_summary": "The implementation removes timezone information from both aware datetimes with replace(tzinfo=None) before comparison. Targeted probes reproduced both failure directions: an already-expired token was reported valid, and a still-valid token was reported expired, while direct aware-datetime comparisons returned the opposite and correct results.",
++      "scope_assessment": "The failure is in the supplied is_token_expired implementation and applies to its supported datetime inputs when callers provide aware values with different UTC offsets; the implementation comment explicitly anticipates values from different zones.",
++      "materiality_assessment": "Incorrect expiration decisions can accept expired credentials or prematurely reject valid credentials, materially affecting security and production correctness."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_10",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "time_handling",
++        "severity": "high",
++        "claim": "Token expiration is evaluated using local wall-clock fields instead of absolute instants, so callers using different timezone offsets can accept already-expired tokens or reject still-valid tokens.",
++        "evidence": [
++          "evals/cases/case_10/src/tokens.py removes timezone information from expires_at and now with replace(tzinfo=None), discarding their UTC offsets before comparison.",
++          "With expires_at=2026-08-28T13:00:00+02:00 (11:00 UTC) and now=2026-08-28T12:00:00+00:00, is_token_expired returned false even though the aware-datetime comparison now >= expires_at was true.",
++          "With expires_at=2026-08-28T12:00:00+00:00 and now=2026-08-28T13:00:00+02:00 (11:00 UTC), is_token_expired returned true even though the aware-datetime comparison now >= expires_at was false."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+diff --git a/evals/results/iteration_1/case_10/admission.json b/evals/results/iteration_1/case_10/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..19577dba871f73bca3fb431d0c928e087c5b98f9
+--- /dev/null
++++ b/evals/results/iteration_1/case_10/admission.json
+@@ -0,0 +1,34 @@
++{
++  "case_id": "case_10",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "merge_into": null,
++      "evidence_summary": "The implementation removes timezone information from both aware datetimes with replace(tzinfo=None) before comparison. Targeted probes reproduced both failure directions: an already-expired token was reported valid, and a still-valid token was reported expired, while direct aware-datetime comparisons returned the opposite and correct results.",
++      "scope_assessment": "The failure is in the supplied is_token_expired implementation and applies to its supported datetime inputs when callers provide aware values with different UTC offsets; the implementation comment explicitly anticipates values from different zones.",
++      "materiality_assessment": "Incorrect expiration decisions can accept expired credentials or prematurely reject valid credentials, materially affecting security and production correctness."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_10",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "time_handling",
++        "severity": "high",
++        "claim": "Token expiration is evaluated using local wall-clock fields instead of absolute instants, so callers using different timezone offsets can accept already-expired tokens or reject still-valid tokens.",
++        "evidence": [
++          "evals/cases/case_10/src/tokens.py removes timezone information from expires_at and now with replace(tzinfo=None), discarding their UTC offsets before comparison.",
++          "With expires_at=2026-08-28T13:00:00+02:00 (11:00 UTC) and now=2026-08-28T12:00:00+00:00, is_token_expired returned false even though the aware-datetime comparison now >= expires_at was true.",
++          "With expires_at=2026-08-28T12:00:00+00:00 and now=2026-08-28T13:00:00+02:00 (11:00 UTC), is_token_expired returned true even though the aware-datetime comparison now >= expires_at was false."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+exec
+/usr/bin/zsh -lc "python - <<'PY'
+import json
+from pathlib import Path
+from jsonschema import Draft202012Validator, RefResolver
+root = Path('.')
+schema_path = root / 'schemas/admission.schema.json'
+instance_path = root / 'evals/results/iteration_1/case_10/admission.json'
+schema = json.loads(schema_path.read_text())
+instance = json.loads(instance_path.read_text())
+resolver = RefResolver(base_uri=(root / 'schemas').resolve().as_uri() + '/', referrer=schema)
+Draft202012Validator(schema, resolver=resolver).validate(instance)
+assert [a['candidate_index'] for a in instance['adjudications']] == [0]
+assert instance['final_review']['decision'] == ('not_ready' if instance['final_review']['findings'] else 'ready')
+print('valid')
+PY" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ exited 1 in 84ms:
+<stdin>:3: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1118, in resolve_from_url
+    document = self.store[url]
+               ~~~~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_utils.py", line 20, in __getitem__
+    return self.store[self.normalize(uri)]
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'https://example.local/agentic-production-readiness/review.schema.json'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/urllib/request.py", line 1321, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1367, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1413, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1362, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1122, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "/usr/lib/python3.14/http/client.py", line 1066, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/http/client.py", line 1501, in connect
+    super().connect()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/http/client.py", line 1032, in connect
+    self.sock = self._create_connection(
+                ~~~~~~~~~~~~~~~~~~~~~~~^
+        (self.host,self.port), self.timeout, self.source_address)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 846, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 983, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1121, in resolve_from_url
+    document = self.resolve_remote(url)
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1228, in resolve_remote
+    with urlopen(uri) as url:  # noqa: S310
+         ~~~~~~~^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/usr/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/usr/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/usr/lib/python3.14/urllib/request.py", line 1369, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno -3] Temporary failure in name resolution>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 449, in validate
+    for error in self.iter_errors(*args, **kwargs):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_keywords.py", line 296, in properties
+    yield from validator.descend(
+    ...<4 lines>...
+    )
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 431, in descend
+    for error in errors:
+                 ^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 477, in _validate_reference
+    scope, resolved = resolve(ref)
+                      ~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1107, in resolve
+    return url, self._remote_cache(url)
+                ~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/validators.py", line 1123, in resolve_from_url
+    raise exceptions._RefResolutionError(exc) from exc
+jsonschema.exceptions._RefResolutionError: <urlopen error [Errno -3] Temporary failure in name resolution>
+
+diff --git a/evals/results/iteration_1/case_10/admission.json b/evals/results/iteration_1/case_10/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..19577dba871f73bca3fb431d0c928e087c5b98f9
+--- /dev/null
++++ b/evals/results/iteration_1/case_10/admission.json
+@@ -0,0 +1,34 @@
++{
++  "case_id": "case_10",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "merge_into": null,
++      "evidence_summary": "The implementation removes timezone information from both aware datetimes with replace(tzinfo=None) before comparison. Targeted probes reproduced both failure directions: an already-expired token was reported valid, and a still-valid token was reported expired, while direct aware-datetime comparisons returned the opposite and correct results.",
++      "scope_assessment": "The failure is in the supplied is_token_expired implementation and applies to its supported datetime inputs when callers provide aware values with different UTC offsets; the implementation comment explicitly anticipates values from different zones.",
++      "materiality_assessment": "Incorrect expiration decisions can accept expired credentials or prematurely reject valid credentials, materially affecting security and production correctness."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_10",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "time_handling",
++        "severity": "high",
++        "claim": "Token expiration is evaluated using local wall-clock fields instead of absolute instants, so callers using different timezone offsets can accept already-expired tokens or reject still-valid tokens.",
++        "evidence": [
++          "evals/cases/case_10/src/tokens.py removes timezone information from expires_at and now with replace(tzinfo=None), discarding their UTC offsets before comparison.",
++          "With expires_at=2026-08-28T13:00:00+02:00 (11:00 UTC) and now=2026-08-28T12:00:00+00:00, is_token_expired returned false even though the aware-datetime comparison now >= expires_at was true.",
++          "With expires_at=2026-08-28T12:00:00+00:00 and now=2026-08-28T13:00:00+02:00 (11:00 UTC), is_token_expired returned true even though the aware-datetime comparison now >= expires_at was false."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+codex
+The first schema-validation command hit the schema’s canonical HTTPS `$id` while resolving its local reference; that is a validator configuration issue, not a report error. I’m rerunning with the local review schema explicitly registered under that canonical ID.
+exec
+/usr/bin/zsh -lc "python - <<'PY'
+import json
+from pathlib import Path
+from jsonschema import Draft202012Validator, RefResolver
+root = Path('.')
+admission = json.loads((root / 'schemas/admission.schema.json').read_text())
+review = json.loads((root / 'schemas/review.schema.json').read_text())
+instance = json.loads((root / 'evals/results/iteration_1/case_10/admission.json').read_text())
+resolver = RefResolver.from_schema(admission, store={review['"'$id'"']: review})
+Draft202012Validator(admission, resolver=resolver).validate(instance)
+assert [a['candidate_index'] for a in instance['adjudications']] == [0]
+assert instance['final_review']['decision'] == ('not_ready' if instance['final_review']['findings'] else 'ready')
+print('valid')
+PY" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 23ms:
+<stdin>:3: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+valid
+
+diff --git a/evals/results/iteration_1/case_10/admission.json b/evals/results/iteration_1/case_10/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..19577dba871f73bca3fb431d0c928e087c5b98f9
+--- /dev/null
++++ b/evals/results/iteration_1/case_10/admission.json
+@@ -0,0 +1,34 @@
++{
++  "case_id": "case_10",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "merge_into": null,
++      "evidence_summary": "The implementation removes timezone information from both aware datetimes with replace(tzinfo=None) before comparison. Targeted probes reproduced both failure directions: an already-expired token was reported valid, and a still-valid token was reported expired, while direct aware-datetime comparisons returned the opposite and correct results.",
++      "scope_assessment": "The failure is in the supplied is_token_expired implementation and applies to its supported datetime inputs when callers provide aware values with different UTC offsets; the implementation comment explicitly anticipates values from different zones.",
++      "materiality_assessment": "Incorrect expiration decisions can accept expired credentials or prematurely reject valid credentials, materially affecting security and production correctness."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_10",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "time_handling",
++        "severity": "high",
++        "claim": "Token expiration is evaluated using local wall-clock fields instead of absolute instants, so callers using different timezone offsets can accept already-expired tokens or reject still-valid tokens.",
++        "evidence": [
++          "evals/cases/case_10/src/tokens.py removes timezone information from expires_at and now with replace(tzinfo=None), discarding their UTC offsets before comparison.",
++          "With expires_at=2026-08-28T13:00:00+02:00 (11:00 UTC) and now=2026-08-28T12:00:00+00:00, is_token_expired returned false even though the aware-datetime comparison now >= expires_at was true.",
++          "With expires_at=2026-08-28T12:00:00+00:00 and now=2026-08-28T13:00:00+02:00 (11:00 UTC), is_token_expired returned true even though the aware-datetime comparison now >= expires_at was false."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+codex
+
+diff --git a/evals/results/iteration_1/case_10/admission.json b/evals/results/iteration_1/case_10/admission.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..19577dba871f73bca3fb431d0c928e087c5b98f9
+--- /dev/null
++++ b/evals/results/iteration_1/case_10/admission.json
+@@ -0,0 +1,34 @@
++{
++  "case_id": "case_10",
++  "adjudications": [
++    {
++      "candidate_index": 0,
++      "outcome": "admit",
++      "reason": "supported_material_finding",
++      "merge_into": null,
++      "evidence_summary": "The implementation removes timezone information from both aware datetimes with replace(tzinfo=None) before comparison. Targeted probes reproduced both failure directions: an already-expired token was reported valid, and a still-valid token was reported expired, while direct aware-datetime comparisons returned the opposite and correct results.",
++      "scope_assessment": "The failure is in the supplied is_token_expired implementation and applies to its supported datetime inputs when callers provide aware values with different UTC offsets; the implementation comment explicitly anticipates values from different zones.",
++      "materiality_assessment": "Incorrect expiration decisions can accept expired credentials or prematurely reject valid credentials, materially affecting security and production correctness."
++    }
++  ],
++  "merge_groups": [],
++  "final_review": {
++    "case_id": "case_10",
++    "decision": "not_ready",
++    "findings": [
++      {
++        "category": "time_handling",
++        "severity": "high",
++        "claim": "Token expiration is evaluated using local wall-clock fields instead of absolute instants, so callers using different timezone offsets can accept already-expired tokens or reject still-valid tokens.",
++        "evidence": [
++          "evals/cases/case_10/src/tokens.py removes timezone information from expires_at and now with replace(tzinfo=None), discarding their UTC offsets before comparison.",
++          "With expires_at=2026-08-28T13:00:00+02:00 (11:00 UTC) and now=2026-08-28T12:00:00+00:00, is_token_expired returned false even though the aware-datetime comparison now >= expires_at was true.",
++          "With expires_at=2026-08-28T12:00:00+00:00 and now=2026-08-28T13:00:00+02:00 (11:00 UTC), is_token_expired returned true even though the aware-datetime comparison now >= expires_at was false."
++        ],
++        "verified": true,
++        "confidence": 1.0
++      }
++    ],
++    "uncertainties": []
++  }
++}
+
+tokens used
+14,364
+

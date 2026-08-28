@@ -1,0 +1,365 @@
+OpenAI Codex v0.150.1
+--------
+workdir: /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a04998-99b2-7ec1-ad54-19a2c41e54c4
+--------
+user
+Review evals/cases/case_09 for production readiness.
+
+Use:
+- prompts/candidate_review.md
+- schemas/review.schema.json
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+Write only the schema-valid candidate review JSON to:
+
+evals/results/iteration_1/case_09/candidates.json
+
+Do not modify the case files. Follow prompts/candidate_review.md exactly.
+
+codex
+I’ll read the repository instructions, the specified review prompt and schema, then inspect only `case_09` and write the validated JSON to the requested result path.
+exec
+/usr/bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g '"'!evals/ground_truth.yaml'"' -g '"'!evals/verify_cases.py'"' -g '"'!evals/results/**'"' -g '"'!outputs/**'"' | sort && printf '\\nRequested files:\\n' && rg --files prompts schemas evals/cases/case_09 | sort" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+
+Requested files:
+evals/cases/case_09/src/__pycache__/orders.cpython-314.pyc
+evals/cases/case_09/src/orders.py
+evals/cases/case_09/tests/__pycache__/test_orders.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_09/tests/test_orders.py
+prompts/baseline_review.md
+prompts/candidate_review.md
+prompts/finding_admission.md
+schemas/admission.schema.json
+schemas/review.schema.json
+
+exec
+/usr/bin/zsh -lc "sed -n '1,240p' prompts/candidate_review.md && printf '\\n--- schema ---\\n' && sed -n '1,280p' schemas/review.schema.json && printf '\\n--- source ---\\n' && sed -n '1,280p' evals/cases/case_09/src/orders.py && printf '\\n--- tests ---\\n' && sed -n '1,320p' evals/cases/case_09/tests/test_orders.py" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+You are the candidate-generation stage of a production-readiness review.
+
+Your task is to inspect one backend evaluation case and identify concrete material defects that may make it unsafe or unreliable in production.
+
+You may inspect files in the provided case directory and run safe local commands or tests scoped to that case. You may create temporary local verification probes when useful, but do not modify the case itself.
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- baseline or final benchmark scores
+
+Use only the canonical categories permitted by schemas/review.schema.json.
+
+For each candidate finding:
+- describe one concrete failure mode;
+- use the most specific permitted category;
+- explain the material production impact;
+- provide code or runtime evidence a human can verify;
+- set verified=true only when the behavior was directly confirmed through execution or equally concrete evidence;
+- use confidence from 0.0 to 1.0;
+- avoid style-only concerns and unsupported speculation.
+
+This is a candidate-generation stage, so prefer retaining a well-supported material concern rather than suppressing it merely because another stage may later consolidate or reject it.
+
+If you find no concrete material defect, return decision="ready" with an empty findings array.
+
+Return only valid JSON matching schemas/review.schema.json.
+
+Do not modify the reviewed case.
+
+--- schema ---
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+
+--- source ---
+ALLOWED_TRANSITIONS = {
+    "created": {"paid", "cancelled"},
+    "paid": {"shipped", "cancelled"},
+    "shipped": {"delivered"},
+    "delivered": set(),
+    "cancelled": {"paid"},
+}
+
+
+def transition_order(order: dict, new_status: str) -> dict:
+    current = order["status"]
+    if new_status not in ALLOWED_TRANSITIONS.get(current, set()):
+        raise ValueError(f"invalid transition: {current} -> {new_status}")
+
+    return {**order, "status": new_status}
+
+--- tests ---
+from evals.cases.case_09.src.orders import transition_order
+
+
+def test_created_order_can_be_paid() -> None:
+    order = {"id": 1, "status": "created"}
+
+    assert transition_order(order, "paid")["status"] == "paid"
+
+codex
+The transition table contains a potentially material lifecycle violation: a cancelled order can return to `paid`. I’m verifying that behavior directly and checking whether the existing scoped test suite catches it.
+exec
+/usr/bin/zsh -lc "PYTHONDONTWRITEBYTECODE=1 python - <<'PY'
+from evals.cases.case_09.src.orders import transition_order
+
+original = {\"id\": 9, \"status\": \"cancelled\"}
+result = transition_order(original, \"paid\")
+print({\"original\": original, \"result\": result})
+PY
+PYTHONDONTWRITEBYTECODE=1 pytest -q -p no:cacheprovider evals/cases/case_09/tests/test_orders.py" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 210ms:
+.                                                                        [100%]
+1 passed in 0.01s
+
+exec
+/usr/bin/zsh -lc "nl -ba evals/cases/case_09/src/orders.py && nl -ba evals/cases/case_09/tests/test_orders.py && python - <<'PY'
+try:
+    import jsonschema
+    print('jsonschema available')
+except Exception as exc:
+    print(type(exc).__name__, str(exc))
+PY" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 41ms:
+jsonschema available
+
+codex
+The runtime probe confirmed the cancelled order is resurrected as paid, while the only existing test covers `created → paid`. I’ll record this as a verified high-severity state-transition finding, with downstream effects clearly bounded as an uncertainty.
+exec
+/usr/bin/zsh -lc 'mkdir -p evals/results/iteration_1/case_09' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+apply patch
+patch: completed
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_09/candidates.json
+diff --git a/evals/results/iteration_1/case_09/candidates.json b/evals/results/iteration_1/case_09/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c8b6cc133287d46318e27f2122842d7be0720e87
+--- /dev/null
++++ b/evals/results/iteration_1/case_09/candidates.json
+@@ -0,0 +1,22 @@
++{
++  "case_id": "case_09",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "state_transition",
++      "severity": "high",
++      "claim": "A cancelled order can transition back to paid, resurrecting a terminal cancellation and making the order eligible for downstream paid-order processing such as fulfillment or charging.",
++      "evidence": [
++        "evals/cases/case_09/src/orders.py:6 explicitly includes paid in the allowed transitions for cancelled orders.",
++        "evals/cases/case_09/src/orders.py:10-15 applies any transition listed in ALLOWED_TRANSITIONS and returns a copy with the new status.",
++        "A direct runtime probe calling transition_order({\"id\": 9, \"status\": \"cancelled\"}, \"paid\") returned {\"id\": 9, \"status\": \"paid\"} without raising an error.",
++        "evals/cases/case_09/tests/test_orders.py:4-7 tests only created-to-paid and provides no regression coverage for cancellation finality."
++      ],
++      "verified": true,
++      "confidence": 0.99
++    }
++  ],
++  "uncertainties": [
++    "The case does not include downstream payment or fulfillment integrations, so the exact external side effects of resurrecting a cancelled order cannot be directly verified here."
++  ]
++}
+
+diff --git a/evals/results/iteration_1/case_09/candidates.json b/evals/results/iteration_1/case_09/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c8b6cc133287d46318e27f2122842d7be0720e87
+--- /dev/null
++++ b/evals/results/iteration_1/case_09/candidates.json
+@@ -0,0 +1,22 @@
++{
++  "case_id": "case_09",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "state_transition",
++      "severity": "high",
++      "claim": "A cancelled order can transition back to paid, resurrecting a terminal cancellation and making the order eligible for downstream paid-order processing such as fulfillment or charging.",
++      "evidence": [
++        "evals/cases/case_09/src/orders.py:6 explicitly includes paid in the allowed transitions for cancelled orders.",
++        "evals/cases/case_09/src/orders.py:10-15 applies any transition listed in ALLOWED_TRANSITIONS and returns a copy with the new status.",
++        "A direct runtime probe calling transition_order({\"id\": 9, \"status\": \"cancelled\"}, \"paid\") returned {\"id\": 9, \"status\": \"paid\"} without raising an error.",
++        "evals/cases/case_09/tests/test_orders.py:4-7 tests only created-to-paid and provides no regression coverage for cancellation finality."
++      ],
++      "verified": true,
++      "confidence": 0.99
++    }
++  ],
++  "uncertainties": [
++    "The case does not include downstream payment or fulfillment integrations, so the exact external side effects of resurrecting a cancelled order cannot be directly verified here."
++  ]
++}
+
+exec
+/usr/bin/zsh -lc "python - <<'PY'
+import json
+from pathlib import Path
+from jsonschema import Draft202012Validator
+
+root = Path('.')
+instance_path = root / 'evals/results/iteration_1/case_09/candidates.json'
+schema_path = root / 'schemas/review.schema.json'
+instance = json.loads(instance_path.read_text())
+schema = json.loads(schema_path.read_text())
+Draft202012Validator(schema).validate(instance)
+print('schema-valid')
+PY
+git status --short -- evals/cases/case_09 evals/results/iteration_1/case_09/candidates.json" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 24ms:
+?? evals/cases/case_09/src/__pycache__/
+?? evals/cases/case_09/tests/__pycache__/
+?? evals/results/iteration_1/case_09/candidates.json
+
+diff --git a/evals/results/iteration_1/case_09/candidates.json b/evals/results/iteration_1/case_09/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c8b6cc133287d46318e27f2122842d7be0720e87
+--- /dev/null
++++ b/evals/results/iteration_1/case_09/candidates.json
+@@ -0,0 +1,22 @@
++{
++  "case_id": "case_09",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "state_transition",
++      "severity": "high",
++      "claim": "A cancelled order can transition back to paid, resurrecting a terminal cancellation and making the order eligible for downstream paid-order processing such as fulfillment or charging.",
++      "evidence": [
++        "evals/cases/case_09/src/orders.py:6 explicitly includes paid in the allowed transitions for cancelled orders.",
++        "evals/cases/case_09/src/orders.py:10-15 applies any transition listed in ALLOWED_TRANSITIONS and returns a copy with the new status.",
++        "A direct runtime probe calling transition_order({\"id\": 9, \"status\": \"cancelled\"}, \"paid\") returned {\"id\": 9, \"status\": \"paid\"} without raising an error.",
++        "evals/cases/case_09/tests/test_orders.py:4-7 tests only created-to-paid and provides no regression coverage for cancellation finality."
++      ],
++      "verified": true,
++      "confidence": 0.99
++    }
++  ],
++  "uncertainties": [
++    "The case does not include downstream payment or fulfillment integrations, so the exact external side effects of resurrecting a cancelled order cannot be directly verified here."
++  ]
++}
+
+codex
+Created and schema-validated [candidates.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_09/candidates.json). Case files were not modified.
+diff --git a/evals/results/iteration_1/case_09/candidates.json b/evals/results/iteration_1/case_09/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c8b6cc133287d46318e27f2122842d7be0720e87
+--- /dev/null
++++ b/evals/results/iteration_1/case_09/candidates.json
+@@ -0,0 +1,22 @@
++{
++  "case_id": "case_09",
++  "decision": "not_ready",
++  "findings": [
++    {
++      "category": "state_transition",
++      "severity": "high",
++      "claim": "A cancelled order can transition back to paid, resurrecting a terminal cancellation and making the order eligible for downstream paid-order processing such as fulfillment or charging.",
++      "evidence": [
++        "evals/cases/case_09/src/orders.py:6 explicitly includes paid in the allowed transitions for cancelled orders.",
++        "evals/cases/case_09/src/orders.py:10-15 applies any transition listed in ALLOWED_TRANSITIONS and returns a copy with the new status.",
++        "A direct runtime probe calling transition_order({\"id\": 9, \"status\": \"cancelled\"}, \"paid\") returned {\"id\": 9, \"status\": \"paid\"} without raising an error.",
++        "evals/cases/case_09/tests/test_orders.py:4-7 tests only created-to-paid and provides no regression coverage for cancellation finality."
++      ],
++      "verified": true,
++      "confidence": 0.99
++    }
++  ],
++  "uncertainties": [
++    "The case does not include downstream payment or fulfillment integrations, so the exact external side effects of resurrecting a cancelled order cannot be directly verified here."
++  ]
++}
+
+tokens used
+15,415
+Created and schema-validated [candidates.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_09/candidates.json). Case files were not modified.

@@ -1,0 +1,614 @@
+OpenAI Codex v0.150.1
+--------
+workdir: /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a0498e-9a31-7b11-90c6-5293add260a8
+--------
+user
+Review evals/cases/case_03 for production readiness.
+
+Use:
+- prompts/candidate_review.md
+- schemas/review.schema.json
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- benchmark scores or known expected defects
+
+Write only the schema-valid candidate review JSON to:
+
+evals/results/iteration_1/case_03/candidates.json
+
+Do not modify the case files. Follow prompts/candidate_review.md exactly.
+
+codex
+I’ll inspect the repository guidance, the candidate-review prompt and schema, then review only `case_03` and validate the resulting JSON without touching the case files or prohibited references.
+exec
+/usr/bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g '"'!evals/ground_truth.yaml'"' -g '"'!evals/verify_cases.py'"' -g '"'!evals/results/**'"' | sort && rg --files prompts schemas evals/cases/case_03 | sort" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+evals/cases/case_03/CONTRACT.md
+evals/cases/case_03/src/__pycache__/db.cpython-314.pyc
+evals/cases/case_03/src/__pycache__/payments.cpython-314.pyc
+evals/cases/case_03/src/db.py
+evals/cases/case_03/src/payments.py
+evals/cases/case_03/tests/__pycache__/conftest.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/__pycache__/conftest.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_03/tests/__pycache__/test_concurrency.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/__pycache__/test_conflicting_request.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/__pycache__/test_conflicting_request.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_03/tests/__pycache__/test_cross_connection.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/__pycache__/test_idempotency.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/__pycache__/test_idempotency.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_03/tests/__pycache__/test_process_lifecycle.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/__pycache__/test_single_request.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/__pycache__/test_single_request.cpython-314-pytest-9.0.2.pyc
+evals/cases/case_03/tests/__pycache__/test_transaction_ownership.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/__pycache__/test_validation.cpython-314-pytest-8.4.2.pyc
+evals/cases/case_03/tests/conftest.py
+evals/cases/case_03/tests/test_concurrency.py
+evals/cases/case_03/tests/test_conflicting_request.py
+evals/cases/case_03/tests/test_cross_connection.py
+evals/cases/case_03/tests/test_idempotency.py
+evals/cases/case_03/tests/test_process_lifecycle.py
+evals/cases/case_03/tests/test_single_request.py
+evals/cases/case_03/tests/test_transaction_ownership.py
+evals/cases/case_03/tests/test_validation.py
+prompts/baseline_review.md
+prompts/candidate_review.md
+prompts/finding_admission.md
+schemas/admission.schema.json
+schemas/review.schema.json
+
+exec
+/usr/bin/zsh -lc "sed -n '1,240p' prompts/candidate_review.md && sed -n '1,260p' schemas/review.schema.json && sed -n '1,260p' evals/cases/case_03/CONTRACT.md && sed -n '1,260p' evals/cases/case_03/src/db.py && sed -n '1,320p' evals/cases/case_03/src/payments.py" in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+You are the candidate-generation stage of a production-readiness review.
+
+Your task is to inspect one backend evaluation case and identify concrete material defects that may make it unsafe or unreliable in production.
+
+You may inspect files in the provided case directory and run safe local commands or tests scoped to that case. You may create temporary local verification probes when useful, but do not modify the case itself.
+
+Do not inspect or use:
+- evals/ground_truth.yaml
+- evals/verify_cases.py
+- outputs from other evaluation cases
+- baseline or final benchmark scores
+
+Use only the canonical categories permitted by schemas/review.schema.json.
+
+For each candidate finding:
+- describe one concrete failure mode;
+- use the most specific permitted category;
+- explain the material production impact;
+- provide code or runtime evidence a human can verify;
+- set verified=true only when the behavior was directly confirmed through execution or equally concrete evidence;
+- use confidence from 0.0 to 1.0;
+- avoid style-only concerns and unsupported speculation.
+
+This is a candidate-generation stage, so prefer retaining a well-supported material concern rather than suppressing it merely because another stage may later consolidate or reject it.
+
+If you find no concrete material defect, return decision="ready" with an empty findings array.
+
+Return only valid JSON matching schemas/review.schema.json.
+
+Do not modify the reviewed case.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/agentic-production-readiness/review.schema.json",
+  "title": "Production Readiness Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision", "findings", "uncertainties"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{2}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ready", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "severity",
+          "claim",
+          "evidence",
+          "verified",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "transaction_consistency",
+              "idempotency",
+              "concurrency",
+              "authorization",
+              "retry_policy",
+              "error_handling",
+              "state_transition",
+              "performance",
+              "time_handling",
+              "validation",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+# Case 03 Production Contract
+
+Case 03 is the clean-control evaluation case. Its implementation is expected to be production-ready within the bounded contract below.
+
+## Supported behavior
+
+- `process_payment` owns the payment transaction.
+- The supplied connection must not already have an active transaction.
+- `request_id` must be a non-empty string.
+- `amount_cents` must be a positive integer number of cents; booleans and fractional values are invalid.
+- Payment and idempotency state persist across independent connections and process lifecycles.
+- Replaying the same `request_id` with the same amount returns the original charge.
+- Reusing the same `request_id` with different request data raises an idempotency conflict.
+- Concurrent duplicate requests must produce one durable charge and replay the winning result rather than duplicate the side effect.
+- The charge row and idempotency record are committed atomically.
+
+## Explicit non-goals
+
+- Composing `process_payment` inside a caller-owned transaction is not supported.
+- External payment-provider behavior is outside this fixture; the business side effect is represented by the durable `charges` row.
+- Authorization is outside this case because no API or identity boundary is present.
+
+The clean-control ground truth is `ready` only when the supplied implementation satisfies this contract without material production-readiness defects in scope.
+from pathlib import Path
+import sqlite3
+import tempfile
+
+
+_DATABASE_PATH = Path(tempfile.gettempdir()) / "agentic_production_readiness_case03.sqlite3"
+
+
+def _new_connection() -> sqlite3.Connection:
+    conn = sqlite3.connect(
+        _DATABASE_PATH,
+        timeout=5.0,
+        isolation_level=None,
+        check_same_thread=False,
+    )
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
+    return conn
+
+
+def _initialize_database() -> None:
+    with _new_connection() as conn:
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS charges (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                amount_cents INTEGER NOT NULL CHECK (
+                    typeof(amount_cents) = 'integer' AND amount_cents > 0
+                )
+            );
+
+            CREATE TABLE IF NOT EXISTS idempotency_records (
+                request_id TEXT PRIMARY KEY CHECK (length(trim(request_id)) > 0),
+                amount_cents INTEGER NOT NULL CHECK (
+                    typeof(amount_cents) = 'integer' AND amount_cents > 0
+                ),
+                charge_id INTEGER NOT NULL,
+                FOREIGN KEY (charge_id) REFERENCES charges(id)
+            );
+            """
+        )
+
+
+def connect() -> sqlite3.Connection:
+    """Return a connection to the persistent local database used by this case."""
+    _initialize_database()
+    return _new_connection()
+
+
+def reset_database() -> None:
+    """Reset shared state between tests without changing production lifecycle semantics."""
+    _initialize_database()
+    with _new_connection() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute("DELETE FROM idempotency_records")
+        conn.execute("DELETE FROM charges")
+        conn.execute("DELETE FROM sqlite_sequence WHERE name = 'charges'")
+        conn.commit()
+
+
+_initialize_database()
+import sqlite3
+
+
+class IdempotencyConflict(ValueError):
+    pass
+
+
+class PaymentValidationError(ValueError):
+    pass
+
+
+class TransactionOwnershipError(RuntimeError):
+    pass
+
+
+def process_payment(
+    conn: sqlite3.Connection,
+    request_id: str,
+    amount_cents: int,
+) -> int:
+    """Create one charge per logical request using a transaction owned here."""
+    if not isinstance(request_id, str) or not request_id.strip():
+        raise PaymentValidationError("request_id must be a non-empty string")
+    if (
+        not isinstance(amount_cents, int)
+        or isinstance(amount_cents, bool)
+        or amount_cents <= 0
+    ):
+        raise PaymentValidationError("amount_cents must be a positive integer")
+    if conn.in_transaction:
+        raise TransactionOwnershipError(
+            "process_payment requires a connection with no active transaction"
+        )
+
+    # Acquire the write reservation before the idempotency read so competing
+    # requests cannot both observe a missing key and then race to insert.
+    conn.execute("BEGIN IMMEDIATE")
+
+    try:
+        existing = conn.execute(
+            "SELECT amount_cents, charge_id FROM idempotency_records WHERE request_id = ?",
+            (request_id,),
+        ).fetchone()
+
+        if existing is not None:
+            if existing["amount_cents"] != amount_cents:
+                raise IdempotencyConflict(
+                    "idempotency key was already used with different request data"
+                )
+            charge_id = int(existing["charge_id"])
+        else:
+            cursor = conn.execute(
+                "INSERT INTO charges (amount_cents) VALUES (?)",
+                (amount_cents,),
+            )
+            charge_id = int(cursor.lastrowid)
+            conn.execute(
+                """
+                INSERT INTO idempotency_records (request_id, amount_cents, charge_id)
+                VALUES (?, ?, ?)
+                """,
+                (request_id, amount_cents, charge_id),
+            )
+
+        conn.commit()
+        return charge_id
+    except Exception:
+        conn.rollback()
+        raise
+
+exec
+/usr/bin/zsh -lc 'for f in evals/cases/case_03/tests/*.py; do echo "### $f"; sed -n '"'1,280p' \""'$f"; done' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+### evals/cases/case_03/tests/conftest.py
+import pytest
+
+from evals.cases.case_03.src.db import reset_database
+
+
+@pytest.fixture(autouse=True)
+def _reset_case_database() -> None:
+    reset_database()
+### evals/cases/case_03/tests/test_concurrency.py
+from concurrent.futures import ThreadPoolExecutor
+import threading
+
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import process_payment
+
+
+def test_concurrent_duplicate_requests_converge_on_one_charge() -> None:
+    barrier = threading.Barrier(2)
+
+    def invoke() -> int:
+        conn = connect()
+        barrier.wait()
+        return process_payment(conn, "req-concurrent", 5000)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first = executor.submit(invoke)
+        second = executor.submit(invoke)
+        first_charge_id = first.result(timeout=10)
+        second_charge_id = second.result(timeout=10)
+
+    check_conn = connect()
+    count = check_conn.execute("SELECT COUNT(*) FROM charges").fetchone()[0]
+
+    assert first_charge_id == second_charge_id
+    assert count == 1
+### evals/cases/case_03/tests/test_conflicting_request.py
+import pytest
+
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import IdempotencyConflict, process_payment
+
+
+def test_same_key_with_different_payload_is_rejected() -> None:
+    conn = connect()
+
+    first_charge_id = process_payment(conn, "req-123", 5000)
+
+    with pytest.raises(IdempotencyConflict):
+        process_payment(conn, "req-123", 7000)
+
+    rows = conn.execute(
+        "SELECT id, amount_cents FROM charges ORDER BY id"
+    ).fetchall()
+
+    assert [(row["id"], row["amount_cents"]) for row in rows] == [
+        (first_charge_id, 5000)
+    ]
+### evals/cases/case_03/tests/test_cross_connection.py
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import process_payment
+
+
+def test_retry_on_another_connection_reuses_original_charge() -> None:
+    first_conn = connect()
+    second_conn = connect()
+
+    first_charge_id = process_payment(first_conn, "req-cross-connection", 5000)
+    retry_charge_id = process_payment(second_conn, "req-cross-connection", 5000)
+
+    count = second_conn.execute("SELECT COUNT(*) FROM charges").fetchone()[0]
+
+    assert retry_charge_id == first_charge_id
+    assert count == 1
+### evals/cases/case_03/tests/test_idempotency.py
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import process_payment
+
+
+def test_retry_reuses_original_charge() -> None:
+    conn = connect()
+
+    first_charge_id = process_payment(conn, "req-123", 5000)
+    retry_charge_id = process_payment(conn, "req-123", 5000)
+
+    count = conn.execute("SELECT COUNT(*) FROM charges").fetchone()[0]
+
+    assert retry_charge_id == first_charge_id
+    assert count == 1
+### evals/cases/case_03/tests/test_process_lifecycle.py
+import json
+import subprocess
+import sys
+
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import process_payment
+
+
+def test_idempotency_survives_separate_process() -> None:
+    conn = connect()
+    first_charge_id = process_payment(conn, "req-process", 4200)
+    conn.close()
+
+    script = """
+import json
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import process_payment
+
+conn = connect()
+charge_id = process_payment(conn, 'req-process', 4200)
+count = conn.execute('SELECT COUNT(*) FROM charges').fetchone()[0]
+print(json.dumps({'charge_id': charge_id, 'count': count}))
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    result = json.loads(completed.stdout.strip())
+
+    assert result["charge_id"] == first_charge_id
+    assert result["count"] == 1
+### evals/cases/case_03/tests/test_single_request.py
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import process_payment
+
+
+def test_single_request_creates_one_charge() -> None:
+    conn = connect()
+
+    charge_id = process_payment(conn, "req-123", 5000)
+
+    count = conn.execute("SELECT COUNT(*) FROM charges").fetchone()[0]
+
+    assert charge_id == 1
+    assert count == 1
+### evals/cases/case_03/tests/test_transaction_ownership.py
+import pytest
+
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import TransactionOwnershipError, process_payment
+
+
+def test_payment_rejects_caller_owned_transaction_without_mutating_it() -> None:
+    conn = connect()
+    conn.execute("CREATE TABLE IF NOT EXISTS caller_work (value TEXT NOT NULL)")
+    conn.execute("DELETE FROM caller_work")
+
+    conn.execute("BEGIN")
+    conn.execute("INSERT INTO caller_work (value) VALUES ('keep-me')")
+
+    with pytest.raises(TransactionOwnershipError):
+        process_payment(conn, "req-nested", 5000)
+
+    assert conn.in_transaction is True
+    assert conn.execute("SELECT COUNT(*) FROM caller_work").fetchone()[0] == 1
+    assert conn.execute("SELECT COUNT(*) FROM charges").fetchone()[0] == 0
+
+    conn.rollback()
+
+    assert conn.execute("SELECT COUNT(*) FROM caller_work").fetchone()[0] == 0
+### evals/cases/case_03/tests/test_validation.py
+import pytest
+
+from evals.cases.case_03.src.db import connect
+from evals.cases.case_03.src.payments import PaymentValidationError, process_payment
+
+
+@pytest.mark.parametrize(
+    ("request_id", "amount_cents"),
+    [
+        ("", 5000),
+        ("   ", 5000),
+        (123, 5000),
+        ("req-zero", 0),
+        ("req-negative", -100),
+        ("req-float", 1.5),
+        ("req-bool", True),
+    ],
+)
+def test_invalid_payment_input_is_rejected(request_id, amount_cents) -> None:
+    conn = connect()
+
+    with pytest.raises(PaymentValidationError):
+        process_payment(conn, request_id, amount_cents)
+
+    assert conn.execute("SELECT COUNT(*) FROM charges").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM idempotency_records").fetchone()[0] == 0
+
+codex
+The implementation aligns closely with the bounded contract on static inspection. I’m running the case-local tests now, including its concurrency and process-lifecycle checks, before deciding whether any material finding is supportable.
+exec
+/usr/bin/zsh -lc 'pytest -q evals/cases/case_03/tests' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 264ms:
+..............                                                           [100%]
+14 passed in 0.08s
+
+exec
+/usr/bin/zsh -lc 'if [ -e evals/results/iteration_1/case_03/candidates.json ]; then echo exists; else echo missing; fi' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+missing
+
+exec
+/usr/bin/zsh -lc 'mkdir -p evals/results/iteration_1/case_03' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 0ms:
+apply patch
+patch: completed
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_03/candidates.json
+diff --git a/evals/results/iteration_1/case_03/candidates.json b/evals/results/iteration_1/case_03/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
+--- /dev/null
++++ b/evals/results/iteration_1/case_03/candidates.json
+@@ -0,0 +1,6 @@
++{
++  "case_id": "case_03",
++  "decision": "ready",
++  "findings": [],
++  "uncertainties": []
++}
+
+diff --git a/evals/results/iteration_1/case_03/candidates.json b/evals/results/iteration_1/case_03/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
+--- /dev/null
++++ b/evals/results/iteration_1/case_03/candidates.json
+@@ -0,0 +1,6 @@
++{
++  "case_id": "case_03",
++  "decision": "ready",
++  "findings": [],
++  "uncertainties": []
++}
+
+codex
+All 14 scoped tests pass, and I found no concrete material defect within the stated contract. I’ve written a `ready` review with no findings and am performing a final schema validation on that file.
+exec
+/usr/bin/zsh -lc 'if command -v check-jsonschema >/dev/null 2>&1; then check-jsonschema --schemafile schemas/review.schema.json evals/results/iteration_1/case_03/candidates.json; else python -m jsonschema -i evals/results/iteration_1/case_03/candidates.json schemas/review.schema.json; fi' in /home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness
+ succeeded in 58ms:
+/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/.venv/lib/python3.14/site-packages/jsonschema/__main__.py:4: DeprecationWarning: The jsonschema CLI is deprecated and will be removed in a future version. Please use check-jsonschema instead, which can be installed from https://pypi.org/project/check-jsonschema/
+  from jsonschema.cli import main
+
+diff --git a/evals/results/iteration_1/case_03/candidates.json b/evals/results/iteration_1/case_03/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
+--- /dev/null
++++ b/evals/results/iteration_1/case_03/candidates.json
+@@ -0,0 +1,6 @@
++{
++  "case_id": "case_03",
++  "decision": "ready",
++  "findings": [],
++  "uncertainties": []
++}
+
+codex
+Written and schema-validated: [candidates.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_03/candidates.json).
+diff --git a/evals/results/iteration_1/case_03/candidates.json b/evals/results/iteration_1/case_03/candidates.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..775b908397df44369045df83d83a6ba45c11827e
+--- /dev/null
++++ b/evals/results/iteration_1/case_03/candidates.json
+@@ -0,0 +1,6 @@
++{
++  "case_id": "case_03",
++  "decision": "ready",
++  "findings": [],
++  "uncertainties": []
++}
+
+tokens used
+18,489
+Written and schema-validated: [candidates.json](/home/glaucojrcarvalho/Projects/Pessoal/agentic-production-readiness/evals/results/iteration_1/case_03/candidates.json).
