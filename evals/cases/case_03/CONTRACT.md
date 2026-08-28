@@ -1,6 +1,6 @@
 # Case 03 Production Contract
 
-Case 03 is the clean-control evaluation case. Its implementation is expected to be production-ready within the bounded contract below.
+Review the supplied `process_payment` implementation against the bounded production contract below.
 
 ## Supported behavior
 
@@ -20,4 +20,4 @@ Case 03 is the clean-control evaluation case. Its implementation is expected to 
 - External payment-provider behavior is outside this fixture; the business side effect is represented by the durable `charges` row.
 - Authorization is outside this case because no API or identity boundary is present.
 
-The clean-control ground truth is `ready` only when the supplied implementation satisfies this contract without material production-readiness defects in scope.
+Base the review only on whether the supplied implementation satisfies this contract without material production-readiness defects in scope.
