@@ -1,0 +1,34 @@
+{
+  "case_id": "case_07",
+  "adjudications": [
+    {
+      "candidate_index": 0,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "merge_into": null,
+      "evidence_summary": "The candidate identifies a specific exception path in run_job that catches handler failures and returns a success status, and reports a direct execution in which a RuntimeError produced {'status': 'ok', 'result': None}.",
+      "scope_assessment": "The failure occurs in the supplied run_job implementation when its supported handler callback raises, so it applies directly to normal job execution rather than hypothetical misuse or external infrastructure.",
+      "materiality_assessment": "Reporting failed work as successful can prevent callers from detecting failures or initiating retries, plausibly causing silent incomplete processing or data loss; this is a material production reliability and correctness defect."
+    }
+  ],
+  "merge_groups": [],
+  "final_review": {
+    "case_id": "case_07",
+    "decision": "not_ready",
+    "findings": [
+      {
+        "category": "error_handling",
+        "severity": "high",
+        "claim": "run_job suppresses every handler exception and falsely reports the failed job as successful, preventing callers from detecting or retrying failed work and potentially causing silent data loss or incomplete processing.",
+        "evidence": [
+          "evals/cases/case_07/src/jobs.py catches Exception from handler() and returns {\"status\": \"ok\", \"result\": null} from the exception path.",
+          "A direct execution with a handler that raises RuntimeError('database write failed') returned {'status': 'ok', 'result': None}, confirming that an actual handler failure is presented as success.",
+          "pytest -q evals/cases/case_07 passed its sole test, which covers only the successful handler path and therefore does not detect the false-success behavior."
+        ],
+        "verified": true,
+        "confidence": 1.0
+      }
+    ],
+    "uncertainties": []
+  }
+}

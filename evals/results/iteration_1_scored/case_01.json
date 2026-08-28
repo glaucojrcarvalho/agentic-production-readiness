@@ -1,0 +1,19 @@
+{
+  "case_id": "case_01",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "transaction_consistency",
+      "severity": "high",
+      "claim": "create_order can durably persist an order without its required audit record when the audit step fails, leaving partial business state.",
+      "evidence": [
+        "evals/cases/case_01/src/orders.py:17-25 inserts the order and commits it before attempting the audit write at lines 30-34.",
+        "evals/cases/case_01/src/orders.py:27-28 raises RuntimeError after the order commit when fail_audit=True, so the function exits before creating an audit record.",
+        "Running pytest -q evals/cases/case_01 produced 1 failed and 1 passed test; test_failed_business_operation_leaves_no_partial_state observed order_count == 1 after the simulated audit failure, contradicting the required atomic outcome of zero persisted orders and zero audit records."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}

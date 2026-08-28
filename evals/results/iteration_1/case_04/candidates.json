@@ -1,0 +1,19 @@
+{
+  "case_id": "case_04",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "concurrency",
+      "severity": "high",
+      "claim": "Concurrent reservations can both succeed against the same stock, allowing the service to accept more reservations than inventory can fulfill.",
+      "evidence": [
+        "evals/cases/case_04/src/inventory.py:9-15 reads the available quantity, sleeps, and then writes a value derived from the stale read without any lock or atomic compare-and-update.",
+        "A direct ThreadPoolExecutor probe started two reserve('sku-1', 1) calls against one available unit; in each of five attempts both calls returned true while available('sku-1') ended at 0, proving that two units were promised from one unit of stock.",
+        "evals/cases/case_04/tests/test_inventory.py:4-8 exercises only a single reservation and therefore does not detect this concurrent oversell behavior."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}

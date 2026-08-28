@@ -1,0 +1,53 @@
+{
+  "case_id": "case_06",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "retry_policy",
+      "severity": "high",
+      "claim": "The helper retries every Exception, including permanent failures, so non-retryable errors can repeat work and delay failure handling.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py catches Exception without classifying whether the failure is transient or retryable.",
+        "A runtime probe with attempts=3 confirmed that both ValueError and PermissionError operations were invoked three times before the original exception was raised."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "retry_policy",
+      "severity": "high",
+      "claim": "Retries occur immediately with no delay, backoff, or jitter, allowing a failing dependency to be hit in a tight loop and amplifying overload during an outage.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py calls operation() on each loop iteration without any sleep or backoff calculation.",
+        "A runtime probe of three consecutive TimeoutError failures completed all three attempts in approximately 0.000007 seconds."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "idempotency",
+      "severity": "high",
+      "claim": "The helper accepts arbitrary operations and can repeat a side effect when an attempt commits work but raises before acknowledging success, causing duplicate production actions.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py unconditionally invokes the same operation again after any Exception and provides no idempotency key or safeguard.",
+        "A runtime probe whose first invocation recorded a committed side effect and then raised TimeoutError returned successfully on retry with the side effect recorded twice."
+      ],
+      "verified": true,
+      "confidence": 0.94
+    },
+    {
+      "category": "validation",
+      "severity": "medium",
+      "claim": "Non-positive attempts values are not validated and fail with an internal AssertionError before the operation is called, producing an unstable and misleading API failure mode.",
+      "evidence": [
+        "For attempts=0 or attempts=-1, the loop in evals/cases/case_06/src/retry.py never runs and last_error remains None before the assertion.",
+        "Runtime probes confirmed that attempts=0 and attempts=-1 each raised AssertionError and invoked the operation zero times."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    }
+  ],
+  "uncertainties": [
+    "No production call sites are present in the case, so caller-level exception filtering or idempotency controls cannot be assessed."
+  ]
+}

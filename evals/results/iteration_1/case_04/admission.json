@@ -1,0 +1,33 @@
+{
+  "case_id": "case_04",
+  "adjudications": [
+    {
+      "candidate_index": 0,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "evidence_summary": "Inventory.reserve reads the current stock at src/inventory.py:9, checks that stale value at lines 10-11, then sleeps and writes available - quantity at lines 14-15 without synchronization. A targeted five-attempt probe with two concurrent one-unit reservations and one unit in stock returned [true, true] every time while final availability was 0, confirming that both reservations were accepted from the same unit.",
+      "scope_assessment": "The race occurs in the supplied Inventory implementation under ordinary concurrent calls to its public reserve method; it does not depend on hypothetical external infrastructure or unsupported caller behavior.",
+      "materiality_assessment": "Accepting more reservations than available inventory breaks inventory correctness and can cause unfulfillable orders, making this a material production data-consistency defect."
+    }
+  ],
+  "merge_groups": [],
+  "final_review": {
+    "case_id": "case_04",
+    "decision": "not_ready",
+    "findings": [
+      {
+        "category": "concurrency",
+        "severity": "high",
+        "claim": "Concurrent reservations can both succeed against the same stock, allowing the service to accept more reservations than inventory can fulfill.",
+        "evidence": [
+          "evals/cases/case_04/src/inventory.py:9-15 performs an unsynchronized read-check-sleep-write sequence, so concurrent calls can validate and update from the same stale stock value.",
+          "A targeted ThreadPoolExecutor probe ran two concurrent reserve('sku-1', 1) calls against one available unit; in all five attempts both calls returned true while available('sku-1') ended at 0, confirming that two reservations were accepted from one unit.",
+          "evals/cases/case_04/tests/test_inventory.py:4-8 covers only a single reservation and does not exercise concurrent access."
+        ],
+        "verified": true,
+        "confidence": 1.0
+      }
+    ],
+    "uncertainties": []
+  }
+}

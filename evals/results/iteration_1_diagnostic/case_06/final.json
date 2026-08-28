@@ -1,0 +1,31 @@
+{
+  "case_id": "case_06",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "retry_policy",
+      "severity": "high",
+      "claim": "The helper retries every Exception, including permanent failures, so non-retryable errors can repeat work and delay failure handling.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py catches Exception without classifying whether the failure is transient or retryable.",
+        "A runtime probe with attempts=3 confirmed that both ValueError and PermissionError operations were invoked three times before the original exception was raised."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "retry_policy",
+      "severity": "high",
+      "claim": "Retries occur immediately with no delay, backoff, or jitter, allowing a failing dependency to be hit in a tight loop and amplifying overload during an outage.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py calls operation() on each loop iteration without any sleep or backoff calculation.",
+        "A runtime probe of three consecutive TimeoutError failures completed all three attempts in approximately 0.000007 seconds."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    }
+  ],
+  "uncertainties": [
+    "No production call sites are present in the candidate evidence, so caller-level exception filtering, idempotency controls, and supported attempts values cannot be assessed."
+  ]
+}

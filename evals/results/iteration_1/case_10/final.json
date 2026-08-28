@@ -1,0 +1,19 @@
+{
+  "case_id": "case_10",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "time_handling",
+      "severity": "high",
+      "claim": "Token expiration is evaluated using local wall-clock fields instead of absolute instants, so callers using different timezone offsets can accept already-expired tokens or reject still-valid tokens.",
+      "evidence": [
+        "evals/cases/case_10/src/tokens.py removes timezone information from expires_at and now with replace(tzinfo=None), discarding their UTC offsets before comparison.",
+        "With expires_at=2026-08-28T13:00:00+02:00 (11:00 UTC) and now=2026-08-28T12:00:00+00:00, is_token_expired returned false even though the aware-datetime comparison now >= expires_at was true.",
+        "With expires_at=2026-08-28T12:00:00+00:00 and now=2026-08-28T13:00:00+02:00 (11:00 UTC), is_token_expired returned true even though the aware-datetime comparison now >= expires_at was false."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}

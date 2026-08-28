@@ -1,0 +1,19 @@
+{
+  "case_id": "case_02",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "idempotency",
+      "severity": "high",
+      "claim": "Retrying the same payment request creates a second charge instead of returning the original charge outcome, allowing clients or infrastructure retries to duplicate a financial side effect.",
+      "evidence": [
+        "evals/cases/case_02/src/payments.py:14-18 unconditionally inserts and commits a new charges row on every process_payment call; it never checks for an existing request_id.",
+        "evals/cases/case_02/src/db.py:9-13 defines request_id as NOT NULL but does not enforce uniqueness, so the database permits multiple charges for the same logical request.",
+        "Running pytest -q evals/cases/case_02 produced one failure and one pass: two calls with request_id req-123 caused test_idempotency.py:18 to observe count == 2 rather than the required count == 1."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}

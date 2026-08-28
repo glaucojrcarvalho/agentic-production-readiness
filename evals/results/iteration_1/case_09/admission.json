@@ -1,0 +1,35 @@
+{
+  "case_id": "case_09",
+  "adjudications": [
+    {
+      "candidate_index": 0,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "evidence_summary": "The transition table explicitly allows cancelled -> paid, and transition_order accepts every transition in that table. This directly establishes that a cancelled order can be returned to the paid state; the sole test covers only created -> paid and does not contradict or guard against this behavior.",
+      "scope_assessment": "The failure is present in the supplied order state machine and can be triggered through its public transition_order function with statuses defined by the implementation. It does not depend on hypothetical callers or infrastructure.",
+      "materiality_assessment": "Reopening a terminally cancelled order violates order lifecycle correctness and can expose it to paid-state processing. The exact downstream effects are not included in the case, but the invalid state resurrection itself is a material production correctness risk."
+    }
+  ],
+  "merge_groups": [],
+  "final_review": {
+    "case_id": "case_09",
+    "decision": "not_ready",
+    "findings": [
+      {
+        "category": "state_transition",
+        "severity": "high",
+        "claim": "A cancelled order can transition back to paid, resurrecting a terminal cancellation and making the order eligible for downstream paid-order processing.",
+        "evidence": [
+          "evals/cases/case_09/src/orders.py:1-7 defines cancelled as allowing a transition to paid.",
+          "evals/cases/case_09/src/orders.py:10-15 accepts any transition listed in ALLOWED_TRANSITIONS and returns the order with the requested new status.",
+          "evals/cases/case_09/tests/test_orders.py:4-7 covers only created-to-paid and provides no regression coverage for cancellation finality."
+        ],
+        "verified": true,
+        "confidence": 0.99
+      }
+    ],
+    "uncertainties": [
+      "The case does not include downstream payment or fulfillment integrations, so the exact external effects of returning a cancelled order to paid cannot be directly verified."
+    ]
+  }
+}

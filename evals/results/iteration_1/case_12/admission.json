@@ -1,0 +1,53 @@
+{
+  "case_id": "case_12",
+  "adjudications": [
+    {
+      "candidate_index": 0,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "evidence_summary": "issue_credit accepts actor_account_id but never uses it, validates only the amount, and passes target_account_id directly to the ledger. The candidate's cross-account probe demonstrates that an actor can credit a different account successfully, while the test covers only the same-account path.",
+      "scope_assessment": "The failure occurs in the supplied issue_credit API using its declared parameters and implementation; it does not depend on a hypothetical caller or external infrastructure.",
+      "materiality_assessment": "Allowing an unverified actor to create value for an arbitrary account is a material authorization and financial-integrity failure."
+    },
+    {
+      "candidate_index": 1,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "evidence_summary": "CreditLedger.add always appends a new entry and merely records request_id without checking it. The candidate's repeated-request probe demonstrates that identical deliveries produce distinct ledger entries and duplicate the credit.",
+      "scope_assessment": "The failure is intrinsic to the supplied credit API and its request_id parameter, and is reproducible through ordinary repeated invocation without assumptions about external infrastructure.",
+      "materiality_assessment": "Duplicate processing of a credit request can create balances multiple times during retries, causing material financial and data-integrity harm."
+    }
+  ],
+  "merge_groups": [],
+  "final_review": {
+    "case_id": "case_12",
+    "decision": "not_ready",
+    "findings": [
+      {
+        "category": "authorization",
+        "severity": "high",
+        "claim": "Credit issuance ignores actor_account_id and therefore permits a caller to issue credit to an arbitrary target account without any actor-to-target authorization check, enabling unauthorized balance creation.",
+        "evidence": [
+          "evals/cases/case_12/src/credits.py:16-26 accepts actor_account_id but never reads it; the function passes target_account_id directly to ledger.add after validating only that the amount is positive.",
+          "A scoped runtime probe called issue_credit with actor_account_id='attacker', target_account_id='victim', amount_cents=2500, and request_id='req-cross-account'; it succeeded and stored {'id': 1, 'account_id': 'victim', 'amount_cents': 2500, 'request_id': 'req-cross-account'}.",
+          "evals/cases/case_12/tests/test_credits.py:7-13 covers only the same-account path and does not exercise or reject cross-account issuance."
+        ],
+        "verified": true,
+        "confidence": 0.99
+      },
+      {
+        "category": "idempotency",
+        "severity": "high",
+        "claim": "Repeated delivery of the same credit request creates a new ledger entry each time because request_id is recorded but never checked for prior processing, so ordinary retries can apply the credit more than once.",
+        "evidence": [
+          "evals/cases/case_12/src/credits.py:5-13 unconditionally creates and appends an entry; request_id is stored as data but is not used to detect a duplicate.",
+          "A scoped runtime probe invoked issue_credit twice with the identical actor, target, amount, and request_id='req-duplicate'; both calls succeeded and produced distinct entries with ids 2 and 3, each crediting 1000 cents to acct-a.",
+          "evals/cases/case_12/tests/test_credits.py contains only a single-call success test, so the existing passing test does not cover retry behavior."
+        ],
+        "verified": true,
+        "confidence": 0.99
+      }
+    ],
+    "uncertainties": []
+  }
+}

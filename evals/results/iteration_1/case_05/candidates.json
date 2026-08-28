@@ -1,0 +1,18 @@
+{
+  "case_id": "case_05",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "authorization",
+      "severity": "high",
+      "claim": "Any tenant can retrieve another tenant's invoice by ID because get_invoice_for_tenant ignores actor_tenant_id and returns the invoice without checking ownership, causing cross-tenant disclosure of invoice data.",
+      "evidence": [
+        "evals/cases/case_05/src/invoices.py:10-19 accepts actor_tenant_id, fetches solely by invoice_id, and returns the fetched invoice without comparing invoice['tenant_id'] to actor_tenant_id.",
+        "A direct runtime probe created invoice 7 for tenant-a and called get_invoice_for_tenant(repo, 7, 'tenant-b'); it returned {'id': 7, 'tenant_id': 'tenant-a', 'amount_cents': 1200}."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}

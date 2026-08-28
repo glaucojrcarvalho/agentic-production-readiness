@@ -1,0 +1,19 @@
+{
+  "case_id": "case_08",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "performance",
+      "severity": "high",
+      "claim": "Listing users with order counts performs a full scan of all orders for every user, giving O(users \u00d7 orders) work and causing CPU and response-time growth that can make the operation unusable on production-sized datasets.",
+      "evidence": [
+        "evals/cases/case_08/src/users.py:15-16 loops over every user and invokes orders_for_user once per user.",
+        "evals/cases/case_08/src/users.py:9-10 implements each orders_for_user invocation by iterating through the entire _orders collection.",
+        "A runtime probe with 40 users and 250 instrumented orders observed exactly 10,000 user_id reads (40 \u00d7 250), while producing the correct aggregate count of 250 orders; the scoped test also passed."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    }
+  ],
+  "uncertainties": []
+}

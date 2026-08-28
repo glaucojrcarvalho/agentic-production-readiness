@@ -1,0 +1,73 @@
+{
+  "case_id": "case_06",
+  "adjudications": [
+    {
+      "candidate_index": 0,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "merge_into": null,
+      "evidence_summary": "The implementation catches every Exception and the reported probe shows that permanent ValueError and PermissionError failures are each retried through all configured attempts.",
+      "scope_assessment": "This behavior is intrinsic to the supplied retry helper and does not depend on an external caller or infrastructure assumption.",
+      "materiality_assessment": "Retrying permanent failures can repeat work and delay error propagation, creating a material production reliability risk."
+    },
+    {
+      "candidate_index": 1,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "merge_into": null,
+      "evidence_summary": "The retry loop invokes the operation again without delay, backoff, or jitter, and the reported probe completed three failing attempts in approximately seven microseconds.",
+      "scope_assessment": "The tight retry loop is directly implemented by the supplied helper and applies whenever a retryable operation fails.",
+      "materiality_assessment": "Immediate retries can amplify load on a failing dependency and worsen an outage, which is a material operational reliability risk distinct from exception classification."
+    },
+    {
+      "candidate_index": 2,
+      "outcome": "reject",
+      "reason": "out_of_scope",
+      "merge_into": null,
+      "evidence_summary": "The probe demonstrates that an operation designed to commit a side effect and then raise can duplicate that side effect when retried.",
+      "scope_assessment": "No production call sites or contract establish that this generic helper owns idempotency or is used for non-idempotent operations without caller-level safeguards, so the claimed production failure depends on a hypothetical caller.",
+      "materiality_assessment": "Duplicate side effects would be material if such a caller existed, but that usage is not supported by the supplied evidence."
+    },
+    {
+      "candidate_index": 3,
+      "outcome": "reject",
+      "reason": "not_material",
+      "merge_into": null,
+      "evidence_summary": "The loop does not execute for non-positive attempts, leaving last_error unset and causing the assertion to fail before the operation is invoked.",
+      "scope_assessment": "The behavior is directly attributable to the supplied implementation, but the evidence does not show that non-positive attempts are supported input or can arise in production usage.",
+      "materiality_assessment": "For invalid configuration the helper fails immediately without performing work; the difference between AssertionError and a dedicated validation error is not shown to affect production correctness, reliability, security, data integrity, or operational performance."
+    }
+  ],
+  "merge_groups": [],
+  "final_review": {
+    "case_id": "case_06",
+    "decision": "not_ready",
+    "findings": [
+      {
+        "category": "retry_policy",
+        "severity": "high",
+        "claim": "The helper retries every Exception, including permanent failures, so non-retryable errors can repeat work and delay failure handling.",
+        "evidence": [
+          "evals/cases/case_06/src/retry.py catches Exception without classifying whether the failure is transient or retryable.",
+          "A runtime probe with attempts=3 confirmed that both ValueError and PermissionError operations were invoked three times before the original exception was raised."
+        ],
+        "verified": true,
+        "confidence": 0.99
+      },
+      {
+        "category": "retry_policy",
+        "severity": "high",
+        "claim": "Retries occur immediately with no delay, backoff, or jitter, allowing a failing dependency to be hit in a tight loop and amplifying overload during an outage.",
+        "evidence": [
+          "evals/cases/case_06/src/retry.py calls operation() on each loop iteration without any sleep or backoff calculation.",
+          "A runtime probe of three consecutive TimeoutError failures completed all three attempts in approximately 0.000007 seconds."
+        ],
+        "verified": true,
+        "confidence": 0.99
+      }
+    ],
+    "uncertainties": [
+      "No production call sites are present in the candidate evidence, so caller-level exception filtering, idempotency controls, and supported attempts values cannot be assessed."
+    ]
+  }
+}

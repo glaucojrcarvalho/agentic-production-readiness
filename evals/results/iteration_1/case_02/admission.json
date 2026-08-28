@@ -1,0 +1,34 @@
+{
+  "case_id": "case_02",
+  "adjudications": [
+    {
+      "candidate_index": 0,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "merge_into": null,
+      "evidence_summary": "process_payment executes and commits an unconditional INSERT for every invocation, while the charges schema has no uniqueness constraint on request_id. The targeted idempotency test calls the function twice with request_id req-123 and observes two rows rather than one.",
+      "scope_assessment": "The failure occurs in the supplied implementation under the retry behavior explicitly exercised by the case test, so it applies to supported usage rather than a hypothetical caller or infrastructure assumption.",
+      "materiality_assessment": "A retry duplicates a payment charge, creating a concrete financial side effect and a production data-integrity and correctness risk; high severity is warranted."
+    }
+  ],
+  "merge_groups": [],
+  "final_review": {
+    "case_id": "case_02",
+    "decision": "not_ready",
+    "findings": [
+      {
+        "category": "idempotency",
+        "severity": "high",
+        "claim": "Retrying the same payment request creates a second charge instead of returning the original charge outcome, allowing retries to duplicate a financial side effect.",
+        "evidence": [
+          "evals/cases/case_02/src/payments.py:14-18 unconditionally inserts and commits a new charges row on every process_payment call without checking for an existing request_id.",
+          "evals/cases/case_02/src/db.py:9-13 declares request_id NOT NULL but does not enforce uniqueness, permitting multiple charges for the same logical request.",
+          "pytest -q evals/cases/case_02 fails test_idempotency.py:18 because two calls with request_id req-123 produce count == 2 instead of the required count == 1; the single-request test passes."
+        ],
+        "verified": true,
+        "confidence": 1.0
+      }
+    ],
+    "uncertainties": []
+  }
+}

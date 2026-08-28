@@ -1,0 +1,43 @@
+{
+  "case_id": "case_06",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "retry_policy",
+      "severity": "high",
+      "claim": "The helper retries every Exception, including deterministic and non-retryable failures, so an operation that has already performed side effects before raising a permanent error can be executed repeatedly.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py:7-11 catches the undifferentiated Exception base class and continues the loop without any retryability predicate or exception allowlist.",
+        "A runtime probe using an operation that always raises ValueError('invalid payload') showed that call_with_retry(..., attempts=3) invoked the operation three times before re-raising ValueError."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "retry_policy",
+      "severity": "high",
+      "claim": "Retries run immediately with no delay, backoff, or jitter, which can amplify load against a failing dependency and make concurrent callers retry in lockstep during an outage.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py:7-11 immediately begins the next loop iteration after an exception; there is no sleep, backoff calculation, jitter, or server-directed delay handling.",
+        "A runtime probe with three consecutive TimeoutError failures recorded only 2.515 and 1.332 microseconds between invocation timestamps, confirming that the attempts are issued as a hot loop."
+      ],
+      "verified": true,
+      "confidence": 0.99
+    },
+    {
+      "category": "validation",
+      "severity": "medium",
+      "claim": "Non-positive attempts values are not validated and produce internal, optimization-dependent failures instead of a stable input error.",
+      "evidence": [
+        "evals/cases/case_06/src/retry.py:7 skips the operation when attempts is 0 or negative, leaving last_error as None; line 13 then relies on an assertion rather than validating the public argument.",
+        "Runtime probes with attempts=0 and attempts=-1 both raised an empty AssertionError without invoking the operation; under python -O, attempts=0 instead raised TypeError('exceptions must derive from BaseException') at line 14."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": [
+    "The case does not document which exception types are intended to be retryable or whether callers guarantee that operations are idempotent.",
+    "The case does not define an expected backoff schedule or maximum elapsed retry duration."
+  ]
+}

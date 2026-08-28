@@ -1,0 +1,34 @@
+{
+  "case_id": "case_10",
+  "adjudications": [
+    {
+      "candidate_index": 0,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "merge_into": null,
+      "evidence_summary": "The implementation removes timezone information from both aware datetimes with replace(tzinfo=None) before comparison. Targeted probes reproduced both failure directions: an already-expired token was reported valid, and a still-valid token was reported expired, while direct aware-datetime comparisons returned the opposite and correct results.",
+      "scope_assessment": "The failure is in the supplied is_token_expired implementation and applies to its supported datetime inputs when callers provide aware values with different UTC offsets; the implementation comment explicitly anticipates values from different zones.",
+      "materiality_assessment": "Incorrect expiration decisions can accept expired credentials or prematurely reject valid credentials, materially affecting security and production correctness."
+    }
+  ],
+  "merge_groups": [],
+  "final_review": {
+    "case_id": "case_10",
+    "decision": "not_ready",
+    "findings": [
+      {
+        "category": "time_handling",
+        "severity": "high",
+        "claim": "Token expiration is evaluated using local wall-clock fields instead of absolute instants, so callers using different timezone offsets can accept already-expired tokens or reject still-valid tokens.",
+        "evidence": [
+          "evals/cases/case_10/src/tokens.py removes timezone information from expires_at and now with replace(tzinfo=None), discarding their UTC offsets before comparison.",
+          "With expires_at=2026-08-28T13:00:00+02:00 (11:00 UTC) and now=2026-08-28T12:00:00+00:00, is_token_expired returned false even though the aware-datetime comparison now >= expires_at was true.",
+          "With expires_at=2026-08-28T12:00:00+00:00 and now=2026-08-28T13:00:00+02:00 (11:00 UTC), is_token_expired returned true even though the aware-datetime comparison now >= expires_at was false."
+        ],
+        "verified": true,
+        "confidence": 1.0
+      }
+    ],
+    "uncertainties": []
+  }
+}

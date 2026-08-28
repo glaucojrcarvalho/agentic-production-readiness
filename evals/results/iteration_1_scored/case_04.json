@@ -1,0 +1,19 @@
+{
+  "case_id": "case_04",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "concurrency",
+      "severity": "high",
+      "claim": "Concurrent reservations can both succeed against the same stock, allowing the service to accept more reservations than inventory can fulfill.",
+      "evidence": [
+        "evals/cases/case_04/src/inventory.py:9-15 performs an unsynchronized read-check-sleep-write sequence, so concurrent calls can validate and update from the same stale stock value.",
+        "A targeted ThreadPoolExecutor probe ran two concurrent reserve('sku-1', 1) calls against one available unit; in all five attempts both calls returned true while available('sku-1') ended at 0, confirming that two reservations were accepted from one unit.",
+        "evals/cases/case_04/tests/test_inventory.py:4-8 covers only a single reservation and does not exercise concurrent access."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}

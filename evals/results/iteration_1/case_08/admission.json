@@ -1,0 +1,34 @@
+{
+  "case_id": "case_08",
+  "adjudications": [
+    {
+      "candidate_index": 0,
+      "outcome": "admit",
+      "reason": "supported_material_finding",
+      "merge_into": null,
+      "evidence_summary": "The implementation calls orders_for_user once for each listed user, and orders_for_user scans the complete order collection, directly establishing O(users × orders) work. The candidate's 40-user, 250-order probe reporting 10,000 user_id reads is consistent with this code path.",
+      "scope_assessment": "The failure is inherent in the supplied repository and list_users_with_order_counts implementation under its ordinary supported usage; it does not depend on hypothetical callers or infrastructure.",
+      "materiality_assessment": "The multiplicative scan can materially increase CPU consumption and response latency as both users and orders grow, making a production listing operation impractical on large datasets."
+    }
+  ],
+  "merge_groups": [],
+  "final_review": {
+    "case_id": "case_08",
+    "decision": "not_ready",
+    "findings": [
+      {
+        "category": "performance",
+        "severity": "high",
+        "claim": "Listing users with order counts performs a full scan of all orders for every user, giving O(users × orders) work and causing CPU and response-time growth that can make the operation unusable on production-sized datasets.",
+        "evidence": [
+          "evals/cases/case_08/src/users.py:15-16 loops over every user and invokes orders_for_user once per user.",
+          "evals/cases/case_08/src/users.py:9-10 implements each orders_for_user invocation by iterating through the entire _orders collection.",
+          "A runtime probe with 40 users and 250 instrumented orders observed exactly 10,000 user_id reads (40 × 250), while producing the correct aggregate count of 250 orders; the scoped test also passed."
+        ],
+        "verified": true,
+        "confidence": 0.99
+      }
+    ],
+    "uncertainties": []
+  }
+}
