@@ -43,7 +43,15 @@ The first baseline run on `evals/cases/case_03` did not treat the intended clean
 
 Because `case_03` is intended to be a true-negative control for false-positive measurement, these findings exposed a fixture-design problem rather than a baseline miss. The result is diagnostic and will not count toward final baseline metrics.
 
-Decision: repair the clean control before scoring it. The revised fixture now shares state across independent database connections, serializes competing writers before the idempotency check, preserves caller transaction ownership, validates payment inputs, and adds explicit regression tests for cross-connection replay, concurrent duplicates, nested transaction behavior, and invalid inputs. After the revised fixture passes locally, `case_03` must be rerun from a fresh agent session using the frozen baseline prompt.
+Decision: repair the clean control before scoring it. The revised fixture shared state across independent database connections, serialized competing writers before the idempotency check, attempted to preserve caller transaction ownership, validated basic payment inputs, and added regression tests for cross-connection replay, concurrent duplicates, nested transaction behavior, and invalid inputs.
+
+### Pilot / Clean-Control Contract Check
+
+A fresh baseline run against the repaired `case_03` still produced verified findings outside the original tests: module import and process exit deleted the shared database and therefore destroyed idempotency state across worker lifecycles; concurrent calls inside caller-owned deferred transactions could surface `database is locked`; and a positive float such as `1.5` could be persisted as `amount_cents` despite the integer-cents API contract.
+
+This second diagnostic showed that making visible tests pass was not enough to define a clean benchmark case. The fixture lacked a bounded production contract, which allowed accidental behavior to remain in scope.
+
+Decision: define the clean-control contract explicitly and repair the fixture to that contract before any scored run. `process_payment` now owns its transaction and rejects already-active caller transactions without mutating them; `request_id` must be a non-empty string; `amount_cents` must be a positive integer; database constraints also enforce integer positive cents; persistent state is no longer deleted on module import or process exit; and a process-boundary regression test verifies replay survives a separate Python process. The two earlier `case_03` outputs remain diagnostic and are excluded from baseline metrics.
 
 ### Approach
 
