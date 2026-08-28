@@ -1,0 +1,21 @@
+{
+  "case_id": "case_02",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "idempotency",
+      "severity": "high",
+      "claim": "Retrying the same payment request creates an additional charge instead of returning the original result, so ordinary client or transport retries can duplicate a financial side effect.",
+      "evidence": [
+        "evals/cases/case_02/src/payments.py:14-19 unconditionally inserts a new charges row, commits it, and returns the new row ID without checking request_id.",
+        "evals/cases/case_02/src/db.py:9-13 declares request_id as NOT NULL but does not make it UNIQUE, so the database does not prevent duplicate logical requests.",
+        "Running `pytest -q evals/cases/case_02/tests` failed test_retry_does_not_duplicate_business_side_effect: two calls with request_id `req-123` produced a count of 2 where the production invariant requires 1; the suite result was 1 failed, 1 passed."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": [
+    "The case uses an in-memory SQLite database and provides no production deployment or database configuration, so behavior under concurrent requests and production database isolation cannot be directly tested from the supplied case."
+  ]
+}
