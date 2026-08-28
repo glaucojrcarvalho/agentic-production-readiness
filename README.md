@@ -113,6 +113,8 @@ First, agents found real defects in intended clean controls even when visible te
 
 Second, the twelve-case baseline achieved perfect recall but imperfect precision. That shifted the advanced architecture away from "find more" toward "admit better."
 
+A final audit also found that the original `case_03` contract disclosed its expected `ready` label. The contract was neutralized and `case_03` was rerun from fresh baseline and Iteration 1 sessions; both still returned `ready` with zero findings and both aggregate scorecards remained unchanged. The full audit record is in `experiments/CHANGELOG.md`.
+
 The resulting design principle is:
 
 > Do not add agent complexity without a measured failure mode that justifies it.
@@ -142,7 +144,7 @@ Runtime and cost were not yet captured systematically in the current scored run 
 
 Baseline and advanced workflows use the same fixed twelve backend cases, the same canonical defect taxonomy, the same final review schema, and the same deterministic evaluator.
 
-Ground truth and hidden benchmark-construction probes are not exposed to the reviewing agents. Agent trajectories are preserved for reproducibility.
+Ground-truth files and benchmark-construction probes remain in the repository for reproducibility. During scored runs, reviewing agents were explicitly instructed not to inspect them or outputs from other cases. This is procedural isolation rather than filesystem-enforced isolation.
 
 ## Project Method
 
@@ -214,6 +216,8 @@ The repository preserves:
 - all 24 Iteration 1 Codex Stage A/Stage B logs under `evals/results/iteration_1_logs/`;
 - diagnostic outputs that exposed benchmark fixture defects.
 
+Published trajectory logs retain model/tool behavior while sanitizing machine-specific repository paths and Codex session IDs.
+
 ### Clean-checkout verification
 
 On Ubuntu/Debian, create the virtual environment with `python3` because a global `python` command is not guaranteed:
@@ -270,4 +274,4 @@ Strong review agents do not only need to find defects. They need a disciplined m
 
 ## Status
 
-Core experiment and clean-checkout reproducibility verification complete. Current work is final judge-facing packaging and video presentation.
+Core experiment, post-score audit, and clean-checkout reproducibility verification complete. Current work is final judge-facing packaging and video presentation.
