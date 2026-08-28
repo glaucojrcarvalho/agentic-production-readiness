@@ -204,6 +204,46 @@ All twelve Stage A and Stage B trajectories are preserved under `evals/results/i
 
 ---
 
+## Post-Score Audit — Case 03 Label Leakage
+
+**Status:** corrected and revalidated
+
+### Observation
+
+During final submission review, we found that the bounded contract inside `case_03` described the fixture as a "clean-control evaluation case" and explicitly stated that its ground-truth disposition was `ready`. Because the scored reviewer was allowed to inspect files inside the selected case directory, that wording leaked the expected label even though the reviewer was separately instructed not to access `evals/ground_truth.yaml` or hidden benchmark-construction probes.
+
+This was a benchmark-provenance defect. It did not affect defect cases or `case_11`, but it made the original `case_03` true-negative result insufficiently blind.
+
+### Change
+
+The contract was rewritten to contain only supported behavior and explicit non-goals. All `clean-control`, `ground truth`, and expected `ready` wording was removed.
+
+We then reran only the affected case from fresh model sessions for both systems:
+
+- baseline: fresh single-agent review;
+- Iteration 1: fresh Stage A and fresh Stage B contexts.
+
+The public trajectory logs were also sanitized to replace machine-specific repository paths with `[REPO_ROOT]` and remove Codex session IDs. This changes presentation metadata only, not model outputs or scores.
+
+### Evidence
+
+After removing the label leakage:
+
+- baseline `case_03`: `ready`, zero findings;
+- Iteration 1 `case_03`: `ready`, zero findings;
+- baseline aggregate remained TP=11, FP=3, FN=0, precision=0.785714, recall=1.0, F1=0.88;
+- Iteration 1 aggregate remained TP=11, FP=1, FN=0, precision=0.916667, recall=1.0, F1=0.956522.
+
+The correction therefore changed benchmark provenance but did **not** change the measured comparison.
+
+### Decision / Learning
+
+Keep the corrected neutral contract and the fresh `case_03` outputs as the scored artifacts.
+
+The audit reinforces an evaluation-design lesson from the earlier fixture failures: benchmark cases must avoid not only implementation defects but also metadata that reveals the expected answer. Reviewer isolation is partly procedural in this repository—the agents are instructed not to inspect ground truth and hidden probes—so case-local files themselves must remain label-neutral.
+
+---
+
 ## Iteration Template
 
 Copy this section for every meaningful experiment.
