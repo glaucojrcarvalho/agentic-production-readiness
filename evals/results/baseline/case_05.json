@@ -1,0 +1,19 @@
+{
+  "case_id": "case_05",
+  "decision": "not_ready",
+  "findings": [
+    {
+      "category": "authorization",
+      "severity": "critical",
+      "claim": "Any tenant can read another tenant's invoice when it knows or guesses the invoice ID because the tenant-scoped read function never enforces tenant ownership.",
+      "evidence": [
+        "src/invoices.py:10-19 accepts actor_tenant_id but never reads or compares it; after loading by invoice_id alone, it returns the invoice unconditionally.",
+        "Runtime verification: requesting invoice 7 owned by tenant-a with actor_tenant_id tenant-b returned the complete invoice {'id': 7, 'tenant_id': 'tenant-a', 'amount_cents': 1200}.",
+        "tests/test_invoices.py:4-12 covers only the owning-tenant success case and has no negative cross-tenant authorization test; the existing suite passes despite the exposure."
+      ],
+      "verified": true,
+      "confidence": 1.0
+    }
+  ],
+  "uncertainties": []
+}
